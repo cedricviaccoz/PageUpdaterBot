@@ -1,5 +1,7 @@
+# coding: utf-8
 import urllib
 import requests
+import json
 from bs4 import BeautifulSoup
 
 user='PageUpdaterBot'
@@ -26,11 +28,24 @@ edit_cookie.update(r3.cookies)
 
 # 1. Récupérer les dernières pages modifiées.
 
-result=requests.post(baseurl+'api.php?action=feedrecentchanges')
-for page in result:
-    print(page)
-    print('====================== Nouvelle page ======================')
-    #TODO main loop
+result=requests.post(baseurl+'api.php?action=feedrecentchanges&export&exportnowrap')
+soup=BeautifulSoup(result, "xml")
+code=''
+for primitive in soup.findAll("text"):
+    code+=primitive.string
+print(code)
+
+#TODO main loop
+
+
+# for name in names:
+#     result=requests.post(baseurl+'api.php?action=query&titles='+name+'&export&exportnowrap')
+#     soup=BeautifulSoup(result.text, "lxml")
+#     #soup=BeautifulSoup(result.text)
+#     code=''
+#     for primitive in soup.findAll("text"):
+#         code+=primitive.string
+#     print(code)
 
 
 # soup=BeautifulSoup(result.text, "lxml")
