@@ -67,11 +67,38 @@ def main():
 		allEntries = parseEntries(contenu)
 
 		for entry in allEntries:
-			
+			if getPUBId(entry) == None:
+				PUBId = PUBId + 1
+				updatePUBId(entry, PUBId)
+
+			#TODO : à partir de ce moment la il faudrait refactoriser et/ou réécrire les fonctions avec leur description, 
+			# j'étais trop crevé pour continuer à faire la description des fonctions, mais j'ai quand même voulu écrire 
+			# le squelette du main, bien évidemment il doit y avoir des fautes et si il vous plait pas réécrivez.
+			# et remarque peut eêtre de l'orienté objet pour les entry serait intéressant...
+			pagesConcerned=getHyperLinks(entry, pageTitle)
+			for name in pagesConcerned:
+				urlFetched = getWikiPastUrl(name)
+				if urlFetched == None:
+					#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page et la populer 
+					# avec au moins l'entrée dont on dispose.
+					newUrl = createNewPage(name)
+					#pas sur que ce soit le bon mode de fonctionnement ici.
+					addNewEntry(newUrl, entry)
+				else:
+					fillePageContenu = fetchPageData(urlFetched)
+					fillePageEntries = parseEntries(fillePageContenu)
+					'''TODO : le reste de la comparaison entre l'entrée actuelle
+								et les entrées de la page fille pour voir si les ID matchent
+								si les IDs matchent pas, comparer les hypermots avec les dates et lieu pour 
+								être sur que c'est bien les mêmes évènements et overwrite l'entry de la page fille
+								avec l'entrée actuelle.
+
+								Ensuite faudra s'occuper de toute la partie de remettre en ligne les modifications faites et tout ce bouzin....
+					'''
+
 
 
 	#TODO
-
 	updatePUBmetaInfo(HUBPage, PUBId)
 
 
@@ -180,6 +207,49 @@ def parseEntries(content):
 	pass
 
 
+'''
+va récupérer le PUB_id
+contenu dans cette entrée.
+(Pour rappel, un PUB_id a comme forme :
+"<!-- PUB_id=69 -->")
+Si il n'y en a pas, retourne None,
+sinon retourn le PUBId.(un int donc)
+
+@param entry : String
+			  l'entrée biographie.
+'''
+def getPUBId(entry):
+	#TODO
+	pass
+
+
+'''
+Va mettre à jour le PUBId de l'entrée
+passée en argument si Un PUBId est présent,
+Sinon va ajouter ce PUBId à l'entrée
+
+@param entry : String
+			  l'entrée biographie.
+@param PUBId : Int
+			  l'Id à mettre à jour sur cette page.
+'''
+def updatePUBId(entry, PUBId):
+	#TODO
+	pass
+
+'''
+retourne une liste d'hyperLinks contenu
+dans cette entrée sous une forme de liste 
+de String, mais en excluant de cette liste l'argument
+toExclude.
+'''
+def getHyperLinks(entry, toExclude):
+	#TODO
+	pass
+
+
+
+#TODO : description et code des autres fonctions
 
 ## garbage, kept for historical reason.
 
