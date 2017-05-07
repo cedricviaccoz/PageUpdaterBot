@@ -2,6 +2,7 @@
 import urllib
 import requests
 import json
+import re
 from bs4 import BeautifulSoup
 
 passw = 'hqk-NGF-S6z-qqF'
@@ -10,7 +11,9 @@ summary = 'Wikipastbot update'
 
 user = 'PageUpdaterBot' #nom du bot
 HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
-metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
+beginID = '&beginID&'
+endID = '&endID& -->'
+metaInfo = '<!-- PUB METAINFOS : ID = ' + beginID #synthaxe des métainfos présentes sur le HUB du bot
 
 # Login request
 payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
@@ -109,8 +112,22 @@ def main():
 # ou bien enverra une exception (comme vous le sentez)
 #
 def fetchPUBmetaInfo():
-	#TODO
-	pass
+	HUBcontent = fetchPageData(user)
+	result = re.search(beginID + '(.*)' + endID, HUBcontent)
+	result = result.group(1)
+	if result == None: #TODO si les balises ont été modifiées
+		currentID = '0'
+		#write metainfo to HUB
+		newMetaInfo = metaInfo + currentID + endID
+		newContent = newMetaInfo + '\n'
+		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent,'summary':summary,'title':user,'token':edit_token}
+		r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
+	else:
+		currentID = result
+
+
+	#TODO erreur ??
+	return currentID
 
 # Cette fonction doit être appelée après que 
 # PUB ait fait toute sa traversée, elle doit
@@ -125,8 +142,8 @@ def updatePUBmetaInfo(newId):
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
 	currentID = fetchPUBmetaInfo()
-	content=content.replace(metaInfo+currentID, metaInfo+newId)
-	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':name,'token':edit_token}
+	content=content.replace(metaInfo + currentID + endID, metaInfo + str(newId) + endID)
+	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
@@ -176,7 +193,7 @@ def fetchPageData(pageName):
 	for primitive in soup.findAll("text"):
 	    pageData+=primitive.string
 	return pageData
-	
+
 
 
 '''
@@ -245,6 +262,5 @@ def getHyperLinks(entry, toExclude):
 	#TODO
 	pass
 
-
-
+updatePUBmetaInfo(23)
 #TODO : description et code des autres fonctions
