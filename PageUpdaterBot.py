@@ -43,14 +43,14 @@ def test():
 #--------- main code-------------------
 def main():
 	# Récupération de l'Id de base pour les PUB_id
-	PUBId = fetchPUBmetaInfo(HUBPage)
+	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = []
-	if PUBId == 0:
+	pagesToMod = ['PUBTEST']
+	'''if PUBId == 0:
 		pagesToMod = getPageList(True)
 	else:
-		pagesToMod = getPageList(False)
+		pagesToMod = getPageList(False)'''
 
 	## boucle d'action principale du code.
 	for u in pagesToMod:
@@ -59,55 +59,76 @@ def main():
 		allEntries = parseEntries(contenu)
 		previousContent = unParseEntries(allEntries)
 
+		originalEntries=[]
+
 		for entry in allEntries:
 			if getPUBId(entry) == None:
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
-				setPUBId(entry, PUBId)
+				entry = setPUBId(entry, PUBId)
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
+			originalEntries.append(entry)
 
 			pagesConcerned=getHyperLinks(entry, pageTitle)
+			print(pagesConcerned)
+
 			for name in pagesConcerned:
-				urlFetched = getWikiPastUrl(name)
-				if urlFetched == None:
-					#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page
-					urlFetched = createNewPage(name)
+				if re.search(r'\d\d\d\d', name) == None:
+					#le nom des pages dans l'url doit pas contenir d'espace.
+					name=name.replace(" ", "_")
+					print(name)
+					'''urlFetched = getWikiPastUrl(name)
+					if urlFetched == None:
+						#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page
+						urlFetched = createNewPage(name)'''
 
-				fillePageContenu = fetchPageData(urlFetched)
-				fillePageEntries = parseEntries(fillePageContenu)
+					fillePageContenu = fetchPageData(name)
+					fillePageEntries = parseEntries(fillePageContenu)
 
-				#ensuite on créé un index des différentes entrées selon leur PUBId 
-				#IdAndEntry est une liste de tuples de la forme (PUBId: Int, Entries : String) 
-				IdAndEntry = map(lambda e: (getPUBId(e), e), fillePageEntries)
-				found = False
-				currPUBId = getPUBId(entry)
-				#Le coeur de PUB on update les entrées selon l'entrée qu'on dispose nous.
-				for t1, t2 in IdAndEntry:
-					#On regarde d'abord si on a le même ID:
-					if t1 != None:
-						if t1 == currPUBId:
-							#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
-							t2 = entry
-							found=True
-					else:
-						#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
-						if areEntrySimilar(entry, t2):
-							t2 = entry
-							found=True
+					previousFilleContent = unParseEntries(fillePageEntries)
 
-				if not found:
-					#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
-					IdAndEntry.append((currPUBId, entry))
+					#ensuite on créé un index des différentes entrées selon leur PUBId
+					IdAndEntry = []
+					for e in fillePageEntries:
+						IdAndEntry.append((getPUBId(e), e))
 
-				newEntries = map(lambda t1, t2: t2, IdAndEntry)
-				sortedEntries = sortEntries(newEntries)
+					print(IdAndEntry)
+					found = False
+					currPUBId = getPUBId(entry)
+					#Le coeur de PUB on update les entrées selon l'entrée qu'on dispose nous.
+					for t1, t2 in IdAndEntry:
+						#On regarde d'abord si on a le même ID:
+						if t1 != None:
+							if t1 == currPUBId:
+								#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
+								t2 = entry
+								found=True
+						else:
+							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
+							if areEntrySimilar(entry, t2):
+								t2 = entry
+								found=True
 
-				#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
-				contentToUp = unParseEntries(sortEntries)
-				uploadModifications(previousContent, contentTuUp, urlFetched)
+					if not found:
+						#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
+						IdAndEntry.append((currPUBId, entry))
+
+					newEntries = []
+					for t1, t2 in IdAndEntry:
+						newEntries.append(t2)
+
+					sortedEntries = sortEntries(newEntries)
+
+					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
+					contentToUp = unParseEntries(sortedEntries)
+					if contentToUp != None:
+						print("Successfully updated page :"+name)
+						uploadModifications(previousFilleContent, contentToUp, name)
+		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
+		uploadModifications(previousContent, unParseEntries(originalEntries), pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
-	updatePUBmetaInfo(HUBPage, PUBId)
+	updatePUBmetaInfo(PUBId)
 
 
 
@@ -124,7 +145,11 @@ S'il y en a plusieurs, il retourne le dernier.
 			  le contenu dans lequel trouver l'id.
 '''
 def getPUBId(content):
-	return re.search(beginID + '(.*)' + endID, content).group(1)
+	PUB_ID = re.search(beginID + '(.*)' + endID, content)
+	if PUB_ID != None:
+		return PUB_ID.group(1)
+	else:
+		return None
 
 
 '''
@@ -190,7 +215,7 @@ def updatePUBmetaInfo(newId):
 	content=''
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
-	currentID = fetchPUBmetaInfo()
+	currentID = fetchPUBmetaInfo(False)
 	content=content.replace(metaInfo + beginID + currentID + endID, metaInfo + beginID + str(newId) + endID)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
@@ -240,7 +265,8 @@ def fetchPageData(pageName):
 	soup=BeautifulSoup(result.text, "lxml")
 	pageData=''
 	for primitive in soup.findAll("text"):
-	    pageData+=primitive.string
+		if primitive.string != None:
+			pageData+=primitive.string
 	return pageData
 
 
@@ -282,7 +308,7 @@ def parseEntries(content):
 	newLines = []
 	foundOne = False
 	for line in lines:
-		if line.isValidEntry():
+		if isValidEntry(line):
 			newLines.append(line)
 			foundOne = True
 		else:
@@ -387,7 +413,10 @@ formatée en un seul bloc
 				Les entrées nouvellement modifiées
 '''
 def unParseEntries(entries):
-	return '\n'.join(entries)
+	if entries:
+		return '\n'.join(entries)
+	else:
+		return None
 
 
 '''
@@ -407,11 +436,14 @@ def uploadModifications(previousContent, newContent, pageName):
 	soup=BeautifulSoup(result.text,'html.parser')
 	content=''
 	for primitive in soup.findAll("text"):
-		content+=primitive.string
+		if primitive.string != None:
+			content+=primitive.string
+	if previousContent == None:
+		previousContent = '' #TODO
 	content=content.replace(previousContent, newContent)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
-test()
+main()
 
