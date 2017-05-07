@@ -4,12 +4,13 @@ import requests
 import json
 from bs4 import BeautifulSoup
 
-user = 'PageUpdaterBot'
 passw = 'hqk-NGF-S6z-qqF'
 baseurl = 'http://wikipast.epfl.ch/wikipast/'
 summary = 'Wikipastbot update'
-#Page contenant les méta information de PUB, notamment son compteur d'IDs.
-HUBPage = baseurl + 'index.php/PageUpdaterBot'
+
+user = 'PageUpdaterBot' #nom du bot
+HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
+metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
 
 # Login request
 payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
@@ -118,26 +119,27 @@ def main():
 # la fonction retournera un chiffre négatif
 # ou bien enverra une exception (comme vous le sentez)
 #
-# @param page: String 
-#			   la page ou aller chercher les métaInfo.
-def fetchPUBmetaInfo(page):
+def fetchPUBmetaInfo():
 	#TODO
 	pass
 
 # Cette fonction doit être appelée après que 
 # PUB ait fait toute sa traversée, elle doit
 # actualiser l'ID contenu de méta_info.
-# Si pour une quelconque raison le bloc
-# méta info n'existe pas, la fonction doit le recréer
-# et l'initialiser avec le correct ID.
 #
-# @param page : String
-#				la page ou aller chercher les métaInfo.
 # @param newId : Int 
 #				Le nouvel ID a inscrire dans les metaInfo.
-def updatePUBmetaInfo(page, newId):
-	#TODO
-	pass
+def updatePUBmetaInfo(newId):
+	result=requests.post(baseurl+'api.php?action=query&titles='+user+'&export&exportnowrap')
+	soup=BeautifulSoup(result.text,'html.parser')
+	content=''
+	for primitive in soup.findAll("text"):
+		content+=primitive.string
+	currentID = fetchPUBmetaInfo()
+	content=content.replace(metaInfo+currentID, metaInfo+newId)
+	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':name,'token':edit_token}
+	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
+
 
 '''
 En fonction de la variable fromScratch,
