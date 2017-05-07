@@ -277,10 +277,14 @@ les entrées retournées sous la forme montrée plus haut.
 '''
 def parseEntries(content):
 	lines = content.split('\n')
-	for line in lines[:]:
+	newLines = []
+	for line in lines:
 		if not line.isValidEntry():
-			lines.remove(word)
-	return lines
+			newLines.append(line)
+			#if a subtitle is found, abort
+			if line.startswith('='):
+				return newLines
+	return newLines
 
 
 '''
@@ -363,7 +367,7 @@ def areEntrySimilar(entry1, entry2):
 
 '''
 Tri une liste d'entrée par ordre chronologique
-@param listOfEntries : [String]
+@param listOfEntries : List(String)
 				La liste des entrées à trier
 '''
 def sortEntries(listOfEntries):
@@ -372,16 +376,15 @@ def sortEntries(listOfEntries):
 
 '''
 Va transformer une liste d'entrée
-en un format que la page wikipédia va recevoir
-(JSON à voir) et retourner donc ces entrées
-formatée en un seul bloc de ????
+en un format que la page wikipédia en une seule
+sting et retourner donc ces entrées
+formatée en un seul bloc
 
 @param entries : List(String)
 				Les entrées nouvellement modifiées
 '''
 def unParseEntries(entries):
-	#TODO
-	pass
+	return '\n'.join(entries)
 
 
 '''
