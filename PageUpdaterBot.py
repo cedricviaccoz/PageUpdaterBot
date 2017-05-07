@@ -22,24 +22,13 @@ payload = {'action':'login','format':'json','utf8':'','lgname':user,'lgpassword'
 r2 = requests.post(baseurl + 'api.php', data = payload, cookies = r1.cookies)
 
 #get edit token2
-params3 = '?format = json&action = query&meta = tokens&continue = '
+params3 = '?format=json&action=query&meta=tokens&continue='
 r3 = requests.get(baseurl + 'api.php' + params3, cookies = r2.cookies)
 edit_token = r3.json()['query']['tokens']['csrftoken']
 
 edit_cookie = r2.cookies.copy()
 edit_cookie.update(r3.cookies)
 
-# 1. Récupérer les dernières pages modifiées.
-
-result = requests.post(baseurl + 'api.php?action = feedrecentchanges&export&exportnowrap')
-soup = BeautifulSoup(result, "xml")
-code = ''
-for primitive in soup.findAll("text"):
-    code += primitive.string
-print(code)
-
-main()
-#test()
 
 
 # Définis à part du code du main, chaque fonction
@@ -173,16 +162,21 @@ def getPageList(fromScratch):
 		return list(set(liste_pages))
 
 '''
-A l'aide de l'url donné en argument,
-va récupérer les données de cette page,
-sous le format qui vous plaît (JSON je suppose ?)
+À l'aide du titre de la page donné en argument,
+va récupérer les données de cette page, 
+sous la forme d'une string
 
-@param pageUrl : String
-				l'url de la page wikipast ou aller chercher les données.
+@param pageName : String
+				le titre de la page wikipast où aller chercher les données.
 '''
-def fetchPageData(pageUrl):
-	#TODO
-	pass
+def fetchPageData(pageName):
+	result=requests.post(baseurl+'api.php?action=query&titles='+pageName+'&export&exportnowrap')
+	soup=BeautifulSoup(result.text, "lxml")
+	pageData=''
+	for primitive in soup.findAll("text"):
+	    pageData+=primitive.string
+	return pageData
+	
 
 
 '''
