@@ -9,7 +9,7 @@ passw='hqk-NGF-S6z-qqF'
 baseurl='http://wikipast.epfl.ch/wikipast/'
 summary='Wikipastbot update'
 #Page contenant les méta information de PUB, notamment son compteur d'IDs.
-HUBPage='http://wikipast.epfl.ch/'
+HUBPage='http://wikipast.epfl.ch/index.php/PageUpdaterBot'
 
 # Login request
 payload={'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
