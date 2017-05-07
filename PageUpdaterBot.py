@@ -339,7 +339,7 @@ toExclude.
 '''
 def getHyperLinks(entry, toExclude):
 	hyperLinks = re.findall('\[\[(.*?)\]\]', entry)
-	hyperLinks = set(hyperLinks)
+	hyperLinks = set([x.split('|')[0] for x in hyperLinks])
 	if toExclude in hyperLinks: hyperLinks.remove(toExclude)
 	return list(hyperLinks)
 
@@ -439,9 +439,10 @@ def uploadModifications(previousContent, newContent, pageName):
 		if primitive.string != None:
 			content+=primitive.string
 	if previousContent == None:
-		previousContent = '' #TODO
-	content=content.replace(previousContent, newContent)
-	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
+		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent+'\n','summary':summary,'title':pageName,'token':edit_token}
+	else:
+		content=content.replace(previousContent, newContent)
+		payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
