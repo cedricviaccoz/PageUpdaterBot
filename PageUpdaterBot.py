@@ -70,35 +70,46 @@ def main():
 			if getPUBId(entry) == None:
 				PUBId = PUBId + 1
 				updatePUBId(entry, PUBId)
+				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 
-			#TODO : à partir de ce moment la il faudrait refactoriser et/ou réécrire les fonctions avec leur description, 
-			# j'étais trop crevé pour continuer à faire la description des fonctions, mais j'ai quand même voulu écrire 
-			# le squelette du main, bien évidemment il doit y avoir des fautes et si il vous plait pas réécrivez.
-			# et remarque peut eêtre de l'orienté objet pour les entry serait intéressant...
 			pagesConcerned=getHyperLinks(entry, pageTitle)
 			for name in pagesConcerned:
 				urlFetched = getWikiPastUrl(name)
 				if urlFetched == None:
-					#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page et la populer 
-					# avec au moins l'entrée dont on dispose.
-					newUrl = createNewPage(name)
-					#pas sur que ce soit le bon mode de fonctionnement ici.
-					addNewEntry(newUrl, entry)
-				else:
-					fillePageContenu = fetchPageData(urlFetched)
-					fillePageEntries = parseEntries(fillePageContenu)
-					'''TODO : le reste de la comparaison entre l'entrée actuelle
-								et les entrées de la page fille pour voir si les ID matchent
-								si les IDs matchent pas, comparer les hypermots avec les dates et lieu pour 
-								être sur que c'est bien les mêmes évènements et overwrite l'entry de la page fille
-								avec l'entrée actuelle.
+					#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page
+					urlFetched = createNewPage(name)
 
-								Ensuite faudra s'occuper de toute la partie de remettre en ligne les modifications faites et tout ce bouzin....
-					'''
+				fillePageContenu = fetchPageData(urlFetched)
+				fillePageEntries = parseEntries(fillePageContenu)
 
+				#ensuite on créé un index des différentes entrées selon leur PUBId 
+				#IdAndEntry est une liste de tuples de la forme (PUBId: Int, Entries : String) 
+				IdAndEntry = map(lambda e: (getPUBId(e), e), fillePageEntries)
+				found = False
+				currPUBId = getPUBId(entry)
+				#Le coeur de PUB on update les entrées selon l'entrée qu'on dispose nous.
+				for t1, t2 in IdAndEntry:
+					#On regarde d'abord si on a le même ID:
+					if t1 != None:
+						if t1 == currPUBId:
+							#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
+							t2 = entry
+							found=True
+					else:
+						#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
+						if areEntrySimilar(entry, t2):
+							t2 = entry
+							found=True
 
+				if not found:
+					#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
+					IdAndEntry.append((currPUBId, entry))
 
-	#TODO
+				#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
+				contentTuUp = unParseEntries(map(lambda t1, t2: t2), IdAndEntry)
+				uploadModifications(contentTuUp, urlFetched)
+
+	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
 	updatePUBmetaInfo(HUBPage, PUBId)
 
 
@@ -247,9 +258,72 @@ def getHyperLinks(entry, toExclude):
 	#TODO
 	pass
 
+'''
+Va créer une nouvelle page wikipast nommée selon 
+l'argument donné. Si cette page existe déjà, va 
+simplement retourner l'URL de la page. Autrement retourne
+l'url de cette pas nouvelle créée.
+
+@oaram name : String
+			  Le nom de la page à créer.
+'''
+def createNewPage(name):
+	#TODO
+	pass
 
 
-#TODO : description et code des autres fonctions
+'''
+va déterminer si deux entrées sont identiques.
+Pour ce faire il faudra comparer que
+les dates sont identiques, les lieux également
+et surtout que la liste des hypermots entre
+les deux entrées sont les mêmes (cf : getHyperLinks).
+(ne surtout pas comparer les PUBId !!!!!)
+Si toutes les conditions énumérées ci dessus
+sont satisfaites, alors on renvoit True,
+autrement Talse.
+
+@param entry1 : String
+				La première entrée à comparer
+@param entry2 : String
+				La seconde entrée avec laquelle on compare la première
+'''
+def areEntrySimilar(entry1, entry2):
+	#TODO
+	pass
+
+'''
+Va transformer une liste d'entrée
+en un format que la page wikipédia va recevoir
+(JSON à voir) et retourner donc ces entrées
+formatée en un seul bloc de ????
+
+@param entries : List(String)
+				Les entrées nouvellement modifiées
+'''
+def unParseEntries(entries):
+	#TODO
+	pass
+
+'''
+Va uploader le contenu nouvellement modifié
+sur la page indiqué par url
+
+Note importante :
+il faudrait peut être ajouter à "content" le reste
+de la page (pas que la partie des entrées biographiques)
+selon comment il faut uploader des modifications sur wikipast
+(soit juste la partie qui change, soit toute la page)
+
+@param content : ???? (à voir)
+				le contenu à uploader
+@param url : String
+				L'url de la page ou mettre ces modifications.
+
+'''
+def uploadModifications(content, url):
+	#TODO 
+	pass
 
 ## garbage, kept for historical reason.
 
