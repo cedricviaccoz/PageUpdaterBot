@@ -62,7 +62,8 @@ def main():
 
 		for entry in allEntries:
 			if getPUBId(entry) == None:
-				PUBId = PUBId + 1
+				PUBIdInt = int(PUBId) + 1
+				PUBId = str(PUBIdInt)
 				setPUBId(entry, PUBId)
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 
