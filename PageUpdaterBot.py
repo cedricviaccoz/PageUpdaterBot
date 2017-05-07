@@ -59,6 +59,7 @@ def main():
 		contenu = fetchPageData(u)
 		pageTitle = u
 		allEntries = parseEntries(contenu)
+		previousContent = unParseEntries(allEntries)
 
 		for entry in allEntries:
 			if getPUBId(entry) == None:
@@ -105,7 +106,7 @@ def main():
 
 				#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 				contentToUp = unParseEntries(sortEntries)
-				uploadModifications(contentTuUp, urlFetched)
+				uploadModifications(previousContent, contentTuUp, urlFetched)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
 	updatePUBmetaInfo(HUBPage, PUBId)
@@ -281,11 +282,13 @@ les entrées retournées sous la forme montrée plus haut.
 def parseEntries(content):
 	lines = content.split('\n')
 	newLines = []
+	foundOne = False
 	for line in lines:
-		if not line.isValidEntry():
+		if line.isValidEntry():
 			newLines.append(line)
-			#if a subtitle is found, abort
-			if line.startswith('='):
+			foundOne = True
+		else:
+			if foundOne:
 				return newLines
 	return newLines
 
@@ -391,22 +394,24 @@ def unParseEntries(entries):
 
 '''
 Va uploader le contenu nouvellement modifié
-sur la page indiqué par url
+sur la page indiqué par le titre de la page
 
-Note importante :
-il faudrait peut être ajouter à "content" le reste
-de la page (pas que la partie des entrées biographiques)
-selon comment il faut uploader des modifications sur wikipast
-(soit juste la partie qui change, soit toute la page)
-
-@param content : ???? (à voir)
+@param previousContent : String
+				le contenu précédent
+@param newContent : String
 				le contenu à uploader
-@param url : String
-				L'url de la page ou mettre ces modifications.
+@param pageName : String
+				Le nom de la page où appliquer ces modifications.
 
 '''
-def uploadModifications(content, url):
-	#TODO 
-	pass
+def uploadModifications(previousContent, newContent, pageName):
+	result=requests.post(baseurl+'api.php?action=query&titles='+pageName+'&export&exportnowrap')
+	soup=BeautifulSoup(result.text,'html.parser')
+	content=''
+	for primitive in soup.findAll("text"):
+		content+=primitive.string
+	content=content.replace(previousContent, newContent)
+	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
+	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
