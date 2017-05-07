@@ -37,9 +37,7 @@ edit_cookie.update(r3.cookies)
 
 # Définis à part du code du main, chaque fonction
 # devrait idéalement être testée, si possible ici.
-# mais après on fait comme on veut.
 def test():
-	#TODO
 	pass
 
 #--------- main code-------------------
@@ -414,4 +412,6 @@ def uploadModifications(previousContent, newContent, pageName):
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
+
+test()
 
