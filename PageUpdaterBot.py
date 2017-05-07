@@ -4,37 +4,37 @@ import requests
 import json
 from bs4 import BeautifulSoup
 
-user='PageUpdaterBot'
-passw='hqk-NGF-S6z-qqF'
-baseurl='http://wikipast.epfl.ch/wikipast/'
-summary='Wikipastbot update'
+user = 'PageUpdaterBot'
+passw = 'hqk-NGF-S6z-qqF'
+baseurl = 'http://wikipast.epfl.ch/wikipast/'
+summary = 'Wikipastbot update'
 #Page contenant les méta information de PUB, notamment son compteur d'IDs.
-HUBPage='http://wikipast.epfl.ch/index.php/PageUpdaterBot'
+HUBPage = baseurl + 'index.php/PageUpdaterBot'
 
 # Login request
-payload={'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
-r1=requests.post(baseurl + 'api.php', data=payload)
+payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
+r1 = requests.post(baseurl + 'api.php', data = payload)
 
 #login confirm
-login_token=r1.json()['query']['tokens']['logintoken']
-payload={'action':'login','format':'json','utf8':'','lgname':user,'lgpassword':passw,'lgtoken':login_token}
-r2=requests.post(baseurl + 'api.php', data=payload, cookies=r1.cookies)
+login_token = r1.json()['query']['tokens']['logintoken']
+payload = {'action':'login','format':'json','utf8':'','lgname':user,'lgpassword':passw,'lgtoken':login_token}
+r2 = requests.post(baseurl + 'api.php', data = payload, cookies = r1.cookies)
 
 #get edit token2
-params3='?format=json&action=query&meta=tokens&continue='
-r3=requests.get(baseurl + 'api.php' + params3, cookies=r2.cookies)
-edit_token=r3.json()['query']['tokens']['csrftoken']
+params3 = '?format = json&action = query&meta = tokens&continue = '
+r3 = requests.get(baseurl + 'api.php' + params3, cookies = r2.cookies)
+edit_token = r3.json()['query']['tokens']['csrftoken']
 
-edit_cookie=r2.cookies.copy()
+edit_cookie = r2.cookies.copy()
 edit_cookie.update(r3.cookies)
 
 # 1. Récupérer les dernières pages modifiées.
 
-result=requests.post(baseurl+'api.php?action=feedrecentchanges&export&exportnowrap')
-soup=BeautifulSoup(result, "xml")
-code=''
+result = requests.post(baseurl + 'api.php?action = feedrecentchanges&export&exportnowrap')
+soup = BeautifulSoup(result, "xml")
+code = ''
 for primitive in soup.findAll("text"):
-    code+=primitive.string
+    code += primitive.string
 print(code)
 
 main()
@@ -63,7 +63,7 @@ def main():
 	## boucle d'action principale du code.
 	for u in pagesToMod:
 		contenu = fetchPageData(u)
-		pageTitle = getTitle(contenu)
+		pageTitle = u
 		allEntries = parseEntries(contenu)
 
 		for entry in allEntries:
@@ -154,8 +154,21 @@ la forme d'une liste d'url wikipast.
 				 récemment modifiées.
 '''
 def getPageList(fromScratch):
-	#TODO
-	pass
+	if fromScratch:
+		#TODO
+		return []
+	else:
+		protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
+		depuis_date='2017-05-02T16:00:00Z'
+
+		liste_pages=[]
+		for user in protected_logins:
+			result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date)
+			soup=BeautifulSoup(result.content,'lxml')
+			for primitive in soup.usercontribs.findAll('item'):
+				liste_pages.append(primitive['title'])
+
+		return list(set(liste_pages))
 
 '''
 A l'aide de l'url donné en argument,
@@ -169,17 +182,6 @@ def fetchPageData(pageUrl):
 	#TODO
 	pass
 
-'''
-va bêtement récupérer le titre
-de la page courante et le renvoyer
-sous forme de String.
-
-@param content : ???? (à voir)
-				le contenu de la page
-'''
-def getTitle(content):
-	#TODO
-	pass
 
 '''
 Va s'occuper de trier le contenu
@@ -250,32 +252,3 @@ def getHyperLinks(entry, toExclude):
 
 
 #TODO : description et code des autres fonctions
-
-## garbage, kept for historical reason.
-
-# for name in names:
-#     result=requests.post(baseurl+'api.php?action=query&titles='+name+'&export&exportnowrap')
-#     soup=BeautifulSoup(result.text, "lxml")
-#     #soup=BeautifulSoup(result.text)
-#     code=''
-#     for primitive in soup.findAll("text"):
-#         code+=primitive.string
-#     print(code)
-
-
-# soup=BeautifulSoup(result.text, "lxml")
-# #soup=BeautifulSoup(result.text)
-# code=''
-# for primitive in soup.findAll("text"):
-#     code+=primitive.string
-# print(code)
-
-# 2. changer le contenu
-
-# for name in names:
-#         content='\n'
-#         content+='==Contenu rajoutté=='
-#         content+=''
-#         payload={'action':'edit','assert':'user','format':'json','utf8':'','appendtext':content,'summary':summary,'title':name,'token':edit_token}
-#         r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
-#         print(r4.text)
