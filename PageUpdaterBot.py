@@ -13,7 +13,8 @@ user = 'PageUpdaterBot' #nom du bot
 HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
 beginID = '&beginID&'
 endID = '&endID& -->'
-metaInfo = '<!-- PUB METAINFOS : ID = ' + beginID #synthaxe des métainfos présentes sur le HUB du bot
+metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
+entryMetaInfo = '<!-- PUB METAINFOS : entryID = ' #synthaxe des métainfos présentes sur les **entrées des pages**
 
 # Login request
 payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
@@ -62,7 +63,7 @@ def main():
 		for entry in allEntries:
 			if getPUBId(entry) == None:
 				PUBId = PUBId + 1
-				updatePUBId(entry, PUBId)
+				setPUBId(entry, PUBId)
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 
 			pagesConcerned=getHyperLinks(entry, pageTitle)
@@ -122,6 +123,7 @@ S'il y en a plusieurs, il retourne le dernier.
 def getPUBId(content):
 	return re.search(beginID + '(.*)' + endID, content).group(1)
 
+
 '''
 Récupère tous les PUB_id
 dans le contenu passé en argument.
@@ -157,7 +159,7 @@ def fetchPUBmetaInfo(initialPass):
 	if initialPass:
 		currentID = '0'
 		#écrire metainfo dans le HUB
-		newMetaInfo = metaInfo + currentID + endID
+		newMetaInfo = metaInfo + beginID + currentID + endID
 		newContent = newMetaInfo + '\n'
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent,'summary':summary,'title':user,'token':edit_token}
 		r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
@@ -170,6 +172,7 @@ def fetchPUBmetaInfo(initialPass):
 		else:
 			currentID = result
 	return currentID
+
 
 '''Cette fonction doit être appelée après que 
 PUB ait fait toute sa traversée, elle doit
@@ -185,7 +188,7 @@ def updatePUBmetaInfo(newId):
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
 	currentID = fetchPUBmetaInfo()
-	content=content.replace(metaInfo + currentID + endID, metaInfo + str(newId) + endID)
+	content=content.replace(metaInfo + beginID + currentID + endID, metaInfo + beginID + str(newId) + endID)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
@@ -221,6 +224,7 @@ def getPageList(fromScratch):
 
 		return list(set(liste_pages))
 
+
 '''
 À l'aide du titre de la page donné en argument,
 récupère les données de cette page, 
@@ -238,6 +242,18 @@ def fetchPageData(pageName):
 	return pageData
 
 
+'''
+Vérifie que l'entrée donnée en argument soit bien une 
+entrée biographie (c'est à dire une entrée à puce commencant par une date)
+@param entre : String
+				l'entrée à vérifier.
+'''
+def isValidEntry(entry):
+	if entry[0:3] == '*[[' and (entry[3:7]+entry[8:10]+entry[11:13]).isdigit() and entry[7]+entry[10] == '..' and entry[13:15] == ']]':
+		return True
+	else:
+		return False
+
 
 '''
 Va s'occuper de trier le contenu
@@ -245,7 +261,7 @@ de la page donné en argument
 pour en ressortir que les entrées biographiques
 sourcées (le texte ajouté autre part est ignoré).
 Une entrée est normalement écrite sous la forme (dans le code):
-* [[YYYY.MM.JJ]] / [[<lieu>]]. [[<évènement>]] entre [[<Mr. X>]] et [[<Mr.Y>]]. [<référence>]
+*[[YYYY.MM.JJ]] / [[<lieu>]]. [[<évènement>]] entre [[<Mr. X>]] et [[<Mr.Y>]]. [<référence>]
 
 !! remarque importante que je n'avais pas pensé avant :
 Où met-on le PUB_id ? (il sera de la forme "<!-- PUB_id=69-->") ?
@@ -260,8 +276,11 @@ les entrées retournées sous la forme montrée plus haut.
 				le contenu de la page
 '''
 def parseEntries(content):
-	#TODO
-	pass
+	lines = content.split('\n')
+	for line in lines[:]:
+		if not line.isValidEntry():
+			lines.remove(word)
+	return lines
 
 
 '''
@@ -274,9 +293,9 @@ Sinon va ajouter ce PUBId à l'entrée
 @param PUBId : Int
 			  l'Id à mettre à jour sur cette page.
 '''
-def updatePUBId(entry, PUBId):
-	#TODO
-	pass
+def setPUBId(entry, PUBId):
+	return entry+' '+entryMetaInfo+beginID+PUBId+endID
+
 
 '''
 retourne une liste d'hyperLinks contenu
@@ -285,8 +304,21 @@ de String, mais en excluant de cette liste l'argument
 toExclude.
 '''
 def getHyperLinks(entry, toExclude):
-	#TODO
-	pass
+	hyperLinkPattern = '[[' + '(.*)' + ']]'
+	hyperLinks = re.findall(hyperLinkPattern, entry)
+	if toExclude in hyperLinks: hyperLinks.remove(toExclude)
+	return hyperLinks
+
+
+'''
+retourne une liste d'hyperLinks contenu
+dans cette entrée sous une forme de liste 
+de String, mais en excluant de cette liste l'argument
+toExclude.
+'''
+def getReferences(entry):
+	referencePattern = '[' + '(.*)' + ']'
+	return re.findall(referencePattern, entry)
 
 
 '''
@@ -299,17 +331,17 @@ l'url de cette pas nouvelle créée.
 			  Le nom de la page à créer.
 '''
 def createNewPage(name):
-	#TODO
-	pass
+	subtitleToAdd = ''
+	payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':subtitleToAdd,'summary':summary,'title':name,'token':edit_token}
+	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
 '''
-va déterminer si deux entrées sont identiques.
-Pour ce faire il faudra comparer que
-les dates sont identiques, les lieux également
-et surtout que la liste des hypermots entre
-les deux entrées sont les mêmes (cf : getHyperLinks).
-(ne surtout pas comparer les PUBId !!!!!)
+Détermine si deux entrées sont identiques.
+Pour ce faire on teste que
+les dates, les lieux et la liste des hypermots
+sont identiques.
+(Pas de comparaison entre les PUBId!)
 Si toutes les conditions énumérées ci dessus
 sont satisfaites, alors on renvoit True,
 autrement Talse.
@@ -320,17 +352,14 @@ autrement Talse.
 				La seconde entrée avec laquelle on compare la première
 '''
 def areEntrySimilar(entry1, entry2):
-	hyperWordPattern = '[[' + '(.*)' + ']]'
-	linkPattern = '[' + '(.*)' + ']'
-	
 	#la liste des hypermots inclus également la date
-	listOfHyperwords1 = re.findall(hyperWordPattern, entry1)
-	listOfHyperwords2 = re.findall(hyperWordPattern, entry2)
-
-	listOfReferences1 = re.findall(linkPattern, entry1)
-	listOfReferences2 = re.findall(linkPattern, entry2)
+	listOfHyperLinks1 = getHyperLinks(entry1)
+	listOfHyperLinks2 = getHyperLinks(entry2)
+	listOfReferences1 = getReferences(entry1)
+	listOfReferences2 = getReferences(entry2)
 	
-	return (listOfHyperwords1 == listOfHyperwords2) and (listOfReferences1 == listOfReferences2)
+	return (listOfHyperLinks1 == listOfHyperLinks2) and (listOfReferences1 == listOfReferences2)
+
 
 '''
 Va transformer une liste d'entrée
@@ -344,6 +373,7 @@ formatée en un seul bloc de ????
 def unParseEntries(entries):
 	#TODO
 	pass
+
 
 '''
 Va uploader le contenu nouvellement modifié
@@ -364,5 +394,4 @@ selon comment il faut uploader des modifications sur wikipast
 def uploadModifications(content, url):
 	#TODO 
 	pass
-
 
