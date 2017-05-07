@@ -212,21 +212,21 @@ la forme d'une liste d'url wikipast.
 				 récemment modifiées.
 '''
 def getPageList(fromScratch):
-	if fromScratch:
-		#TODO
-		return []
-	else:
-		protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
-		depuis_date='2017-05-02T16:00:00Z'
+	protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
+	depuis_date_recent='2017-05-02T16:00:00Z'
+	depuis_date_all_pages='2017-02-02T16:00:00Z'
 
-		liste_pages=[]
-		for user in protected_logins:
-			result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date)
-			soup=BeautifulSoup(result.content,'lxml')
-			for primitive in soup.usercontribs.findAll('item'):
-				liste_pages.append(primitive['title'])
+	liste_pages=[]
+	for user in protected_logins:
+		if fromScratch:
+			result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date_all_pages)
+		else:
+			result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date_recent)
+		soup=BeautifulSoup(result.content,'lxml')
+		for primitive in soup.usercontribs.findAll('item'):
+			liste_pages.append(primitive['title'])
 
-		return list(set(liste_pages))
+	return list(set(liste_pages))
 
 
 '''
