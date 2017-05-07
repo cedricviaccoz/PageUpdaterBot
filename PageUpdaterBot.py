@@ -216,7 +216,7 @@ def getPageList(fromScratch):
 	if fromScratch:
 		depuis_date = '2017-02-02T16:00:00Z'
 	else:
-		depuis_date = ='2017-05-02T16:00:00Z'
+		depuis_date = '2017-05-02T16:00:00Z'
 
 	liste_pages=[]
 	for user in protected_logins:
@@ -311,10 +311,10 @@ de String, mais en excluant de cette liste l'argument
 toExclude.
 '''
 def getHyperLinks(entry, toExclude):
-	hyperLinkPattern = '[[' + '(.*)' + ']]'
-	hyperLinks = re.findall(hyperLinkPattern, entry)
+	hyperLinks = re.findall('\[\[(.*?)\]\]', entry)
+	hyperLinks = set(hyperLinks)
 	if toExclude in hyperLinks: hyperLinks.remove(toExclude)
-	return hyperLinks
+	return list(hyperLinks)
 
 
 '''
@@ -324,8 +324,7 @@ de String, mais en excluant de cette liste l'argument
 toExclude.
 '''
 def getReferences(entry):
-	referencePattern = '[' + '(.*)' + ']'
-	return re.findall(referencePattern, entry)
+	return re.findall('\[(.*?)\]', entry)
 
 
 '''
@@ -409,4 +408,5 @@ selon comment il faut uploader des modifications sur wikipast
 def uploadModifications(content, url):
 	#TODO 
 	pass
+
 
