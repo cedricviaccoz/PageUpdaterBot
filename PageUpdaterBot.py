@@ -99,8 +99,11 @@ def main():
 					#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
 					IdAndEntry.append((currPUBId, entry))
 
+				newEntries = map(lambda t1, t2: t2, IdAndEntry)
+				sortedEntries = sortEntries(newEntries)
+
 				#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
-				contentTuUp = unParseEntries(map(lambda t1, t2: t2), IdAndEntry)
+				contentToUp = unParseEntries(sortEntries)
 				uploadModifications(contentTuUp, urlFetched)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
