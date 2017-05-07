@@ -362,6 +362,15 @@ def areEntrySimilar(entry1, entry2):
 
 
 '''
+Tri une liste d'entrée par ordre chronologique
+@param listOfEntries : [String]
+				La liste des entrées à trier
+'''
+def sortEntries(listOfEntries):
+	return sorted(listOfEntries)
+
+
+'''
 Va transformer une liste d'entrée
 en un format que la page wikipédia va recevoir
 (JSON à voir) et retourner donc ces entrées
