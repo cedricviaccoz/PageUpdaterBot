@@ -4,41 +4,31 @@ import requests
 import json
 from bs4 import BeautifulSoup
 
-user='PageUpdaterBot'
-passw='hqk-NGF-S6z-qqF'
-baseurl='http://wikipast.epfl.ch/wikipast/'
-summary='Wikipastbot update'
-#Page contenant les méta information de PUB, notamment son compteur d'IDs.
-HUBPage='http://wikipast.epfl.ch/index.php/PageUpdaterBot'
+passw = 'hqk-NGF-S6z-qqF'
+baseurl = 'http://wikipast.epfl.ch/wikipast/'
+summary = 'Wikipastbot update'
+
+user = 'PageUpdaterBot' #nom du bot
+HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
+metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
 
 # Login request
-payload={'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
-r1=requests.post(baseurl + 'api.php', data=payload)
+payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
+r1 = requests.post(baseurl + 'api.php', data = payload)
 
 #login confirm
-login_token=r1.json()['query']['tokens']['logintoken']
-payload={'action':'login','format':'json','utf8':'','lgname':user,'lgpassword':passw,'lgtoken':login_token}
-r2=requests.post(baseurl + 'api.php', data=payload, cookies=r1.cookies)
+login_token = r1.json()['query']['tokens']['logintoken']
+payload = {'action':'login','format':'json','utf8':'','lgname':user,'lgpassword':passw,'lgtoken':login_token}
+r2 = requests.post(baseurl + 'api.php', data = payload, cookies = r1.cookies)
 
 #get edit token2
-params3='?format=json&action=query&meta=tokens&continue='
-r3=requests.get(baseurl + 'api.php' + params3, cookies=r2.cookies)
-edit_token=r3.json()['query']['tokens']['csrftoken']
+params3 = '?format=json&action=query&meta=tokens&continue='
+r3 = requests.get(baseurl + 'api.php' + params3, cookies = r2.cookies)
+edit_token = r3.json()['query']['tokens']['csrftoken']
 
-edit_cookie=r2.cookies.copy()
+edit_cookie = r2.cookies.copy()
 edit_cookie.update(r3.cookies)
 
-# 1. Récupérer les dernières pages modifiées.
-
-result=requests.post(baseurl+'api.php?action=feedrecentchanges&export&exportnowrap')
-soup=BeautifulSoup(result, "xml")
-code=''
-for primitive in soup.findAll("text"):
-    code+=primitive.string
-print(code)
-
-main()
-#test()
 
 
 # Définis à part du code du main, chaque fonction
@@ -63,7 +53,7 @@ def main():
 	## boucle d'action principale du code.
 	for u in pagesToMod:
 		contenu = fetchPageData(u)
-		pageTitle = getTitle(contenu)
+		pageTitle = u
 		allEntries = parseEntries(contenu)
 
 		for entry in allEntries:
@@ -129,26 +119,27 @@ def main():
 # la fonction retournera un chiffre négatif
 # ou bien enverra une exception (comme vous le sentez)
 #
-# @param page: String 
-#			   la page ou aller chercher les métaInfo.
-def fetchPUBmetaInfo(page):
+def fetchPUBmetaInfo():
 	#TODO
 	pass
 
 # Cette fonction doit être appelée après que 
 # PUB ait fait toute sa traversée, elle doit
 # actualiser l'ID contenu de méta_info.
-# Si pour une quelconque raison le bloc
-# méta info n'existe pas, la fonction doit le recréer
-# et l'initialiser avec le correct ID.
 #
-# @param page : String
-#				la page ou aller chercher les métaInfo.
 # @param newId : Int 
 #				Le nouvel ID a inscrire dans les metaInfo.
-def updatePUBmetaInfo(page, newId):
-	#TODO
-	pass
+def updatePUBmetaInfo(newId):
+	result=requests.post(baseurl+'api.php?action=query&titles='+user+'&export&exportnowrap')
+	soup=BeautifulSoup(result.text,'html.parser')
+	content=''
+	for primitive in soup.findAll("text"):
+		content+=primitive.string
+	currentID = fetchPUBmetaInfo()
+	content=content.replace(metaInfo+currentID, metaInfo+newId)
+	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':name,'token':edit_token}
+	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
+
 
 '''
 En fonction de la variable fromScratch,
@@ -165,32 +156,39 @@ la forme d'une liste d'url wikipast.
 				 récemment modifiées.
 '''
 def getPageList(fromScratch):
-	#TODO
-	pass
+	if fromScratch:
+		#TODO
+		return []
+	else:
+		protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
+		depuis_date='2017-05-02T16:00:00Z'
+
+		liste_pages=[]
+		for user in protected_logins:
+			result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date)
+			soup=BeautifulSoup(result.content,'lxml')
+			for primitive in soup.usercontribs.findAll('item'):
+				liste_pages.append(primitive['title'])
+
+		return list(set(liste_pages))
 
 '''
-A l'aide de l'url donné en argument,
-va récupérer les données de cette page,
-sous le format qui vous plaît (JSON je suppose ?)
+À l'aide du titre de la page donné en argument,
+va récupérer les données de cette page, 
+sous la forme d'une string
 
-@param pageUrl : String
-				l'url de la page wikipast ou aller chercher les données.
+@param pageName : String
+				le titre de la page wikipast où aller chercher les données.
 '''
-def fetchPageData(pageUrl):
-	#TODO
-	pass
+def fetchPageData(pageName):
+	result=requests.post(baseurl+'api.php?action=query&titles='+pageName+'&export&exportnowrap')
+	soup=BeautifulSoup(result.text, "lxml")
+	pageData=''
+	for primitive in soup.findAll("text"):
+	    pageData+=primitive.string
+	return pageData
+	
 
-'''
-va bêtement récupérer le titre
-de la page courante et le renvoyer
-sous forme de String.
-
-@param content : ???? (à voir)
-				le contenu de la page
-'''
-def getTitle(content):
-	#TODO
-	pass
 
 '''
 Va s'occuper de trier le contenu
@@ -315,6 +313,7 @@ de la page (pas que la partie des entrées biographiques)
 selon comment il faut uploader des modifications sur wikipast
 (soit juste la partie qui change, soit toute la page)
 
+<<<<<<< HEAD
 @param content : ???? (à voir)
 				le contenu à uploader
 @param url : String
