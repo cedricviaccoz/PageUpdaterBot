@@ -11,10 +11,13 @@ summary = 'Wikipastbot update'
 
 user = 'PageUpdaterBot' #nom du bot
 HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
-beginID = '&beginID&'
-endID = '&endID& -->'
+beginID = 'entryID = &beginID&'
+endID = '&endID&'
+beginHash = 'entryHash = &beginHASH&'
+endHash = '&endHASH&'
 metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
-entryMetaInfo = '<!-- PUB METAINFOS : entryID = ' #synthaxe des métainfos présentes sur les **entrées des pages**
+entryMetaInfo = '<!-- PUB METAINFOS : ' #synthaxe des métainfos présentes sur les **entrées des pages**
+endEntryMetaInfo=' -->' #synthaxe de fin des métainfos présentes sur les **entrées des pages**
 
 # Login request
 payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
@@ -187,7 +190,7 @@ def fetchPUBmetaInfo(initialPass):
 	if initialPass:
 		currentID = '0'
 		#écrire metainfo dans le HUB
-		newMetaInfo = metaInfo + beginID + currentID + endID
+		newMetaInfo = metaInfo + beginID + currentID + endID+endEntryMetaInfo
 		newContent = newMetaInfo + '\n'
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent,'summary':summary,'title':user,'token':edit_token}
 		r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
@@ -216,7 +219,7 @@ def updatePUBmetaInfo(newId):
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
 	currentID = fetchPUBmetaInfo(False)
-	content=content.replace(metaInfo + beginID + currentID + endID, metaInfo + beginID + str(newId) + endID)
+	content=content.replace(metaInfo + beginID + currentID + endID+endEntryMetaInfo, metaInfo + beginID + str(newId) + endID+endEntryMetaInfo)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
@@ -328,7 +331,7 @@ Sinon va ajouter ce PUBId à l'entrée
 			  l'Id à mettre à jour sur cette page.
 '''
 def setPUBId(entry, PUBId):
-	return entry+' '+entryMetaInfo+beginID+PUBId+endID
+	return entry+' '+entryMetaInfo+beginID+PUBId+endID+endEntryMetaInfo
 
 
 '''
@@ -444,6 +447,8 @@ def uploadModifications(previousContent, newContent, pageName):
 		content=content.replace(previousContent, newContent)
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
+
+
 
 
 main()
