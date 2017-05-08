@@ -62,13 +62,15 @@ def main():
 		originalEntries=[]
 
 		for entry in allEntries:
+			isNewEntry = False
 			if getPUBId(entry) == None:
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
 				entry = setPUBId(entry, PUBId)
+				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
-			originalEntries.append(entry)
-
+			entryToDelete = False
+			
 			pagesConcerned=getHyperLinks(entry, pageTitle)
 			print(pagesConcerned)
 
@@ -101,31 +103,39 @@ def main():
 						if t1 != None:
 							if t1 == currPUBId:
 								#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
+								#TODO hash et remplacer le bon
 								t2 = entry
 								found=True
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
-							if areEntrySimilar(entry, t2):
+							if isNewEntry and areEntrySimilar(entry, t2) :
 								t2 = entry
 								found=True
 
-					if not found:
-						#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
-						IdAndEntry.append((currPUBId, entry))
+					if not found 
+						if isNewEntry:
+							#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
+							IdAndEntry.append((currPUBId, entry))
+						else:
+							#Supprimer l'entrée de la page mère
+							entryToDelete = True
 
 					newEntries = []
 					for t1, t2 in IdAndEntry:
 						newEntries.append(t2)
 
-					sortedEntries = sortEntries(newEntries)
+					sortedEntries = sorted(newEntries)
 
 					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 					contentToUp = unParseEntries(sortedEntries)
 					if contentToUp != None:
 						print("Successfully updated page :"+name)
 						uploadModifications(previousFilleContent, contentToUp, name)
+			if not entryToDelete:
+				originalEntries.append(entry)
+
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
-		uploadModifications(previousContent, unParseEntries(originalEntries), pageTitle)
+		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
 	updatePUBmetaInfo(PUBId)
@@ -395,15 +405,6 @@ def areEntrySimilar(entry1, entry2):
 
 
 '''
-Tri une liste d'entrée par ordre chronologique
-@param listOfEntries : List(String)
-				La liste des entrées à trier
-'''
-def sortEntries(listOfEntries):
-	return sorted(listOfEntries)
-
-
-'''
 Va transformer une liste d'entrée
 en un format que la page wikipédia en une seule
 sting et retourner donc ces entrées
@@ -446,5 +447,5 @@ def uploadModifications(previousContent, newContent, pageName):
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
-main()
+# main()
 
