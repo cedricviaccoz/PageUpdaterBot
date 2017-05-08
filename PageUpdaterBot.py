@@ -156,7 +156,22 @@ def getPUBId(content):
 		return PUB_ID.group(1)
 	else:
 		return None
+'''
+Récupère le PUB_hash
+dans le contenu passé en argument.
+S'il n'y en a pas, retourne None,
+sinon retourne le PUBId (en string).
+S'il y en a plusieurs, il retourne le dernier.
 
+@param content : String
+			  le contenu dans lequel trouver l'id.
+'''
+def getPUBHash(content):
+	PUB_hash = re.search(beginHASH + '(.*)' + endHASH, content)
+	if PUB_hash != None:
+		return PUB_hash.group(1)
+	else:
+		return None
 
 '''
 Récupère tous les PUB_id
@@ -335,6 +350,20 @@ Sinon va ajouter ce PUBId à l'entrée
 '''
 def setPUBId(entry, PUBId):
 	return entry+' '+entryMetaInfo+titleID+ beginID+PUBId+endID+endEntryMetaInfo
+
+
+'''
+Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
+
+@param entry : String
+			  l'entrée biographie.
+@param PUBhash : string 
+				hash à mettre à jour 
+@param PUBId : Int
+			  l'Id à mettre à jour sur cette page.
+'''
+def setPUBInfos(entry,PUBId,PUBhash)
+	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHASH+PUBhash+endHash
 
 
 '''
