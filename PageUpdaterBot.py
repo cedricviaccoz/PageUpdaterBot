@@ -3,6 +3,7 @@ import urllib
 import requests
 import json
 import re
+import hashlib
 from bs4 import BeautifulSoup
 
 passw = 'hqk-NGF-S6z-qqF'
@@ -40,23 +41,13 @@ edit_cookie = r2.cookies.copy()
 edit_cookie.update(r3.cookies)
 
 
-
-# Définis à part du code du main, chaque fonction
-# devrait idéalement être testée, si possible ici.
-def test():
-	pass
-
-#--------- main code-------------------
 def main():
 	# Récupération de l'Id de base pour les PUB_id
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST']
-	'''if PUBId == 0:
-		pagesToMod = getPageList(True)
-	else:
-		pagesToMod = getPageList(False)'''
+	pagesToMod = ['PUBTEST', 'Marc Dessimoz'] # = getPageList()
+	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
 	for u in pagesToMod:
@@ -68,27 +59,28 @@ def main():
 		originalEntries=[]
 
 		for entry in allEntries:
+			isNewEntry = False
 			if getPUBId(entry) == None:
 				#si l'entrée n'a pas d'ID, on lui met l'id suivant et un hash
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
-				PUBHASH=md5.new(entry).digest()
-				entry = setPUBInfos(entry, PUBId,PUBhash)
+				PUBHASH = hashlib.new('ripemd160').update(entry).hexdigest() #=md5.new(entry).digest()
+				entry = setPUBInfos(entry, PUBId, PUBHASH)
+				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
-			originalEntries.append(entry)
+			entryToDelete = False
 
 			pagesConcerned=getHyperLinks(entry, pageTitle)
-			print(pagesConcerned)
 
 			for name in pagesConcerned:
 				if re.search(r'\d\d\d\d', name) == None:
 					#le nom des pages dans l'url doit pas contenir d'espace.
+
+					if isNewPage(name, listOfPagesToCompare):
+						createNewPage(name)
+						listOfPagesToCompare.append(name)
+
 					name=name.replace(" ", "_")
-					print(name)
-					'''urlFetched = getWikiPastUrl(name)
-					if urlFetched == None:
-						#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page
-						urlFetched = createNewPage(name)'''
 
 					fillePageContenu = fetchPageData(name)
 					fillePageEntries = parseEntries(fillePageContenu)
@@ -100,7 +92,6 @@ def main():
 					for e in fillePageEntries:
 						IdAndEntry.append((getPUBId(e), e))
 
-					print(IdAndEntry)
 					found = False
 					currPUBId = getPUBId(entry)
 					#Le coeur de PUB on update les entrées selon l'entrée dont on dispose.
@@ -109,31 +100,40 @@ def main():
 						if t1 != None:
 							if t1 == currPUBId:
 								#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
+								#TODO hash et remplacer le bon
 								t2 = entry
 								found=True
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
-							if areEntrySimilar(entry, t2):
+							if isNewEntry and areEntrySimilar(entry, t2) :
 								t2 = entry
 								found=True
 
 					if not found:
-						#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
-						IdAndEntry.append((currPUBId, entry))
+						if isNewEntry:
+							#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
+							IdAndEntry.append((currPUBId, entry))
+						else:
+							#Supprimer l'entrée de la page mère
+							entryToDelete = True
 
 					newEntries = []
 					for t1, t2 in IdAndEntry:
 						newEntries.append(t2)
 
-					sortedEntries = sortEntries(newEntries)
+					sortedEntries = sorted(newEntries)
 
 					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 					contentToUp = unParseEntries(sortedEntries)
 					if contentToUp != None:
-						print("Successfully updated page :"+name)
 						uploadModifications(previousFilleContent, contentToUp, name)
+						print("Successfully updated page : " + name)
+			if not entryToDelete:
+				originalEntries.append(entry)
+
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
-		uploadModifications(previousContent, unParseEntries(originalEntries), pageTitle)
+		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
+		print("Successfully updated page : " + pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
 	updatePUBmetaInfo(PUBId)
@@ -258,12 +258,9 @@ la forme d'une liste d'url wikipast.
 				 ou false si on veut juste récupérer les pages
 				 récemment modifiées.
 '''
-def getPageList(fromScratch):
+def getPageList():
 	protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
-	if fromScratch:
-		depuis_date = '2017-02-02T16:00:00Z'
-	else:
-		depuis_date = '2017-05-02T16:00:00Z'
+	depuis_date = '2017-02-02T16:00:00Z'
 
 	liste_pages=[]
 	for user in protected_logins:
@@ -364,7 +361,7 @@ Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
 @param PUBId : Int
 			  l'Id à mettre à jour sur cette page.
 '''
-def setPUBInfos(entry,PUBId,PUBhash)
+def setPUBInfos(entry,PUBId,PUBhash):
 	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHASH+PUBhash+endHash
 
 
@@ -407,6 +404,19 @@ def createNewPage(name):
 
 
 '''
+Teste si la page donnée en argument existe déjà.
+
+@oaram name : String
+			  Le nom de la page à tester.
+@oaram name : List(String)
+			  La liste des pages existantes.
+'''
+def isNewPage(name, listOfPagesToCompare):
+	return not (name in listOfPagesToCompare)
+	
+
+
+'''
 Détermine si deux entrées sont identiques.
 Pour ce faire on teste que
 les dates, les lieux et la liste des hypermots
@@ -429,15 +439,6 @@ def areEntrySimilar(entry1, entry2):
 	listOfReferences2 = getReferences(entry2)
 	
 	return (listOfHyperLinks1 == listOfHyperLinks2) and (listOfReferences1 == listOfReferences2)
-
-
-'''
-Tri une liste d'entrée par ordre chronologique
-@param listOfEntries : List(String)
-				La liste des entrées à trier
-'''
-def sortEntries(listOfEntries):
-	return sorted(listOfEntries)
 
 
 '''
@@ -475,7 +476,9 @@ def uploadModifications(previousContent, newContent, pageName):
 	for primitive in soup.findAll("text"):
 		if primitive.string != None:
 			content+=primitive.string
-	if previousContent == None:
+	if newContent == None :
+		newContent = ''
+	if previousContent == None :
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent+'\n','summary':summary,'title':pageName,'token':edit_token}
 	else:
 		content=content.replace(previousContent, newContent)
@@ -486,4 +489,3 @@ def uploadModifications(previousContent, newContent, pageName):
 
 
 main()
-
