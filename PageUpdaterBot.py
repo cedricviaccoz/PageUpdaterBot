@@ -103,7 +103,7 @@ def main():
 					print(IdAndEntry)
 					found = False
 					currPUBId = getPUBId(entry)
-					#Le coeur de PUB on update les entrées selon l'entrée qu'on dispose nous.
+					#Le coeur de PUB on update les entrées selon l'entrée dont on dispose.
 					for t1, t2 in IdAndEntry:
 						#On regarde d'abord si on a le même ID:
 						if t1 != None:
