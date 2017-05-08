@@ -11,9 +11,12 @@ summary = 'Wikipastbot update'
 
 user = 'PageUpdaterBot' #nom du bot
 HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
-beginID = 'entryID = &beginID&'
+beginID = '&beginID&'
 endID = '&endID&'
-beginHash = 'entryHash = &beginHASH&'
+titleID='entryID = '
+
+titleHASH='entryHash ='
+beginHash = '&beginHASH&'
 endHash = '&endHASH&'
 metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
 entryMetaInfo = '<!-- PUB METAINFOS : ' #synthaxe des métainfos présentes sur les **entrées des pages**
@@ -190,7 +193,7 @@ def fetchPUBmetaInfo(initialPass):
 	if initialPass:
 		currentID = '0'
 		#écrire metainfo dans le HUB
-		newMetaInfo = metaInfo + beginID + currentID + endID+endEntryMetaInfo
+		newMetaInfo = metaInfo +titleID+ beginID + currentID + endID+endEntryMetaInfo
 		newContent = newMetaInfo + '\n'
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent,'summary':summary,'title':user,'token':edit_token}
 		r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
@@ -219,7 +222,7 @@ def updatePUBmetaInfo(newId):
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
 	currentID = fetchPUBmetaInfo(False)
-	content=content.replace(metaInfo + beginID + currentID + endID+endEntryMetaInfo, metaInfo + beginID + str(newId) + endID+endEntryMetaInfo)
+	content=content.replace(metaInfo +titleID+ beginID + currentID + endID+endEntryMetaInfo, metaInfo +titleID+ beginID + str(newId) + endID+endEntryMetaInfo)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
@@ -331,7 +334,7 @@ Sinon va ajouter ce PUBId à l'entrée
 			  l'Id à mettre à jour sur cette page.
 '''
 def setPUBId(entry, PUBId):
-	return entry+' '+entryMetaInfo+beginID+PUBId+endID+endEntryMetaInfo
+	return entry+' '+entryMetaInfo+titleID+ beginID+PUBId+endID+endEntryMetaInfo
 
 
 '''
