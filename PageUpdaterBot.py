@@ -69,9 +69,11 @@ def main():
 
 		for entry in allEntries:
 			if getPUBId(entry) == None:
+				#si l'entrée n'a pas d'ID, on lui met l'id suivant et un hash
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
-				entry = setPUBId(entry, PUBId)
+				PUBHASH=md5.new(entry).digest()
+				entry = setPUBInfos(entry, PUBId,PUBhash)
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			originalEntries.append(entry)
 
