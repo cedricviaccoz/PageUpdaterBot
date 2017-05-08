@@ -34,23 +34,18 @@ edit_cookie = r2.cookies.copy()
 edit_cookie.update(r3.cookies)
 
 
-
-# Définis à part du code du main, chaque fonction
-# devrait idéalement être testée, si possible ici.
-def test():
-	pass
-
-#--------- main code-------------------
 def main():
 	# Récupération de l'Id de base pour les PUB_id
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST']
-	'''if PUBId == 0:
-		pagesToMod = getPageList(True)
-	else:
-		pagesToMod = getPageList(False)'''
+	pagesToMod = ['PUBTEST'] # = getPageList(True)
+	listOfPagesToCompare = getPageList(True)
+	
+	# if PUBId == 0:
+	# 	pagesToMod = getPageList(True)
+	# else:
+	# 	pagesToMod = getPageList(False)
 
 	## boucle d'action principale du code.
 	for u in pagesToMod:
@@ -70,19 +65,17 @@ def main():
 				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			entryToDelete = False
-			
+
 			pagesConcerned=getHyperLinks(entry, pageTitle)
-			print(pagesConcerned)
 
 			for name in pagesConcerned:
 				if re.search(r'\d\d\d\d', name) == None:
 					#le nom des pages dans l'url doit pas contenir d'espace.
 					name=name.replace(" ", "_")
-					print(name)
-					'''urlFetched = getWikiPastUrl(name)
-					if urlFetched == None:
-						#ilavec n'y a pas d'Url qui correspond à notre hypermot, donc on doit créer cette page
-						urlFetched = createNewPage(name)'''
+
+					if isNewPage(name, listOfPagesToCompare):
+						name = createNewPage(name)
+						listOfPagesToCompare.append(name)
 
 					fillePageContenu = fetchPageData(name)
 					fillePageEntries = parseEntries(fillePageContenu)
@@ -94,7 +87,6 @@ def main():
 					for e in fillePageEntries:
 						IdAndEntry.append((getPUBId(e), e))
 
-					print(IdAndEntry)
 					found = False
 					currPUBId = getPUBId(entry)
 					#Le coeur de PUB on update les entrées selon l'entrée qu'on dispose nous.
@@ -380,6 +372,19 @@ def createNewPage(name):
 
 
 '''
+Teste si la page donnée en argument existe déjà.
+
+@oaram name : String
+			  Le nom de la page à tester.
+@oaram name : List(String)
+			  La liste des pages existantes.
+'''
+def isNewPage(name, listOfPagesToCompare):
+	return (name in listOfPagesToCompare)
+	
+
+
+'''
 Détermine si deux entrées sont identiques.
 Pour ce faire on teste que
 les dates, les lieux et la liste des hypermots
@@ -449,3 +454,6 @@ def uploadModifications(previousContent, newContent, pageName):
 
 # main()
 
+#test si page exist
+print(getPageList(True))
+print(getPageList(False))
