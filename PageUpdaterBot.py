@@ -39,13 +39,8 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST'] # = getPageList(True)
-	listOfPagesToCompare = getPageList(True)
-	
-	# if PUBId == 0:
-	# 	pagesToMod = getPageList(True)
-	# else:
-	# 	pagesToMod = getPageList(False)
+	pagesToMod = ['PUBTEST', 'Marc Dessimoz'] # = getPageList()
+	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
 	for u in pagesToMod:
@@ -71,11 +66,12 @@ def main():
 			for name in pagesConcerned:
 				if re.search(r'\d\d\d\d', name) == None:
 					#le nom des pages dans l'url doit pas contenir d'espace.
-					name=name.replace(" ", "_")
 
 					if isNewPage(name, listOfPagesToCompare):
-						name = createNewPage(name)
+						createNewPage(name)
 						listOfPagesToCompare.append(name)
+
+					name=name.replace(" ", "_")
 
 					fillePageContenu = fetchPageData(name)
 					fillePageEntries = parseEntries(fillePageContenu)
@@ -104,7 +100,7 @@ def main():
 								t2 = entry
 								found=True
 
-					if not found 
+					if not found:
 						if isNewEntry:
 							#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
 							IdAndEntry.append((currPUBId, entry))
@@ -121,13 +117,14 @@ def main():
 					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 					contentToUp = unParseEntries(sortedEntries)
 					if contentToUp != None:
-						print("Successfully updated page :"+name)
 						uploadModifications(previousFilleContent, contentToUp, name)
+						print("Successfully updated page : " + name)
 			if not entryToDelete:
 				originalEntries.append(entry)
 
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
 		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
+		print("Successfully updated page : " + pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
 	updatePUBmetaInfo(PUBId)
@@ -237,12 +234,9 @@ la forme d'une liste d'url wikipast.
 				 ou false si on veut juste récupérer les pages
 				 récemment modifiées.
 '''
-def getPageList(fromScratch):
+def getPageList():
 	protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
-	if fromScratch:
-		depuis_date = '2017-02-02T16:00:00Z'
-	else:
-		depuis_date = '2017-05-02T16:00:00Z'
+	depuis_date = '2017-02-02T16:00:00Z'
 
 	liste_pages=[]
 	for user in protected_logins:
@@ -380,7 +374,7 @@ Teste si la page donnée en argument existe déjà.
 			  La liste des pages existantes.
 '''
 def isNewPage(name, listOfPagesToCompare):
-	return (name in listOfPagesToCompare)
+	return not (name in listOfPagesToCompare)
 	
 
 
@@ -444,7 +438,9 @@ def uploadModifications(previousContent, newContent, pageName):
 	for primitive in soup.findAll("text"):
 		if primitive.string != None:
 			content+=primitive.string
-	if previousContent == None:
+	if newContent == None :
+		newContent = ''
+	if previousContent == None :
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent+'\n','summary':summary,'title':pageName,'token':edit_token}
 	else:
 		content=content.replace(previousContent, newContent)
@@ -452,8 +448,4 @@ def uploadModifications(previousContent, newContent, pageName):
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
 
-# main()
-
-#test si page exist
-print(getPageList(True))
-print(getPageList(False))
+main()
