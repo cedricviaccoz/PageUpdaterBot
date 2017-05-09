@@ -93,6 +93,9 @@ def main():
 					for e in fillePageEntries:
 						IdAndEntry.append((getPUBId(e), e))
 
+					#liste qui contiendra les nouvelles entrées modifiées (ou pas) de la page fille. 
+					newEntries = []
+
 					found = False
 					currPUBId = getPUBId(entry)
 					#Le coeur de PUB on update les entrées selon l'entrée dont on dispose.
@@ -106,22 +109,23 @@ def main():
 									if t2ActualHash != getPUBHash(entry): #t2 modifiée
 										t2 = setPUBInfos(t2,t1,t2ActualHash)
 										originalEntryToAppend = t2 #modification dans la page mère
-										 #FAUX : originalEntries.append(t2)
+										newEntries.append(originalEntryToAppend)
 									else:
-										#aucune modification mais quand meme append pour pas perdre l'entrée ? 
-										pass #TODO
+										#aucune modification mais quand meme append pour pas perdre l'entrée
+										newEntries.append(t2)
 								else:
 									#on overwrite l'entrée dans la page fille
 									t2 = setPUBInfos(entry,t1,entryActualHash)
 									#et on met à jour le hash dans la page mère
 									originalEntryToAppend = t2
-									#FAUX : originalEntries.append(t2)
+									newEntries.append(t2)
 								found=True
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
 							if isNewEntry and areEntrySimilar(entry, t2) :
 								t2 = entry
 								found=True
+								newEntries.append(t2)
 
 					if not found:
 						if isNewEntry:
@@ -130,10 +134,6 @@ def main():
 						else:
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
-
-					newEntries = [] #TODO au sommet
-					for t1, t2 in IdAndEntry:
-						newEntries.append(t2) #TODO dans la boucle for 
 
 					sortedEntries = sorted(newEntries)
 
