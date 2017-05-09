@@ -110,13 +110,11 @@ def main():
 										originalEntryToAppend = t2 #modification dans la page mère
 										newT2 = setPUBInfos(t2,t1,t2ActualHash)
 										newEntries.append(newT2)
-										print('page mère = page fille ≠')
 									else:
 										#if entryActualHash == t2ActualHash:
 										#aucune modification mais quand meme append pour pas perdre l'entrée
 										newEntries.append(t2)
 										#originalEntryToAppend = newT2
-										print('page mère = page fille =')
 										
 
 								else:
@@ -125,7 +123,6 @@ def main():
 									newT2 = setPUBInfos(entry,t1,entryActualHash)
 									#et on met à jour le hash dans la page mère
 									newEntries.append(newT2)
-									print('page mère ≠ page fille ?')
 								found=True
 							else:
 								newEntries.append(t2)
@@ -142,7 +139,6 @@ def main():
 					if not found:
 						if isNewEntry or emptyFillePage:
 							#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
-							print('entry : ' + str(entry))
 							newEntries.append(entry)
 						else:
 							#Supprimer l'entrée de la page mère
@@ -154,16 +150,15 @@ def main():
 					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 					contentToUp = unParseEntries(sortedEntries)
 					if contentToUp != None:
-						print('content up : ' + contentToUp)
 						uploadModifications(previousFilleContent, contentToUp, name)
-						print("Successfully updated page : " + name)
+						print("Successfully updated dependant page : " + name)
 			if not entryToDelete:
 				originalEntryToAppend = setPUBInfos(originalEntryToAppend,getPUBId(originalEntryToAppend),generateHash(originalEntryToAppend))
 				originalEntries.append(originalEntryToAppend)
 
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
 		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
-		print("Successfully updated page : " + pageTitle)
+		print("Successfully updated current page : " + pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
 
