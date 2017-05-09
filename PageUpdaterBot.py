@@ -65,7 +65,8 @@ def main():
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
 				PUBHASH = generateHash(entry)
-				entry = setPUBInfos(humanEntry, PUBId, PUBHASH)
+				entry = setPUBInfos(entry, PUBId, PUBHASH)
+				originalEntryToAppend = entry
 				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			entryToDelete = False
@@ -104,16 +105,17 @@ def main():
 									t2ActualHash = generateHash(t2)
 									if t2ActualHash != getPUBHash(entry): #t2 modifiée
 										t2 = setPUBInfos(t2,t1,t2ActualHash)
-										originalEntries.append(t2) #modification dans la page mère
-										entryToDelete = True
+										originalEntryToAppend = t2 #modification dans la page mère
+										 #FAUX : originalEntries.append(t2)
 									else:
-										#aucune modification mais quand meme append pour pas perdre l'entrée ? TODO
+										#aucune modification mais quand meme append pour pas perdre l'entrée ? 
+										pass #TODO
 								else:
 									#on overwrite l'entrée dans la page fille
 									t2 = setPUBInfos(entry,t1,entryActualHash)
 									#et on met à jour le hash dans la page mère
-									originalEntries.append(t2) 
-									entryToDelete = True
+									originalEntryToAppend = t2
+									#FAUX : originalEntries.append(t2)
 								found=True
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
@@ -141,7 +143,7 @@ def main():
 						uploadModifications(previousFilleContent, contentToUp, name)
 						print("Successfully updated page : " + name)
 			if not entryToDelete:
-				originalEntries.append(entry)
+				originalEntries.append(originalEntryToAppend)
 
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
 		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
@@ -183,7 +185,7 @@ S'il y en a plusieurs, il retourne le dernier.
 			  le contenu dans lequel trouver l'id.
 '''
 def getPUBHash(content):
-	PUB_hash = re.search(beginHASH + '(.*)' + endHASH, content)
+	PUB_hash = re.search(beginHash + '(.*)' + endHash, content)
 	if PUB_hash != None:
 		return PUB_hash.group(1)
 	else:
@@ -198,8 +200,17 @@ d'abord les metainfos de l'entrée puis le retourne.
 			  l'entrée pour laquelle générer un hash.
 '''
 def generateHash(entry):
-	humanEntry = entry.split(entryMetaInfo)[0]
-	return hashlib.md5(humanEntry.encode()).hexdigest()
+	return hashlib.md5(removeHash(entry).encode()).hexdigest()
+
+
+'''
+Enlève les métadonnées d'une entrée.
+
+@param entry : String
+			  l'entrée pour laquelle supprimer les métadonnées.
+'''
+def removeHash(entry):
+	return entry.split(entryMetaInfo)[0]
 
 
 '''
@@ -364,19 +375,6 @@ def parseEntries(content):
 	return newLines
 
 
-'''
-Va mettre à jour le PUBId de l'entrée
-passée en argument si Un PUBId est présent,
-Sinon va ajouter ce PUBId à l'entrée
-
-@param entry : String
-			  l'entrée biographie.
-@param PUBId : Int
-			  l'Id à mettre à jour sur cette page.
-'''
-def setPUBId(entry, PUBId):
-	return entry+' '+entryMetaInfo+titleID+ beginID+PUBId+endID+endEntryMetaInfo
-
 
 '''
 Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
@@ -389,7 +387,8 @@ Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
 			  l'Id à mettre à jour sur cette page.
 '''
 def setPUBInfos(entry,PUBId,PUBhash):
-	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHash+PUBhash+endHash
+	entry = removeHash(entry)
+	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHash+PUBhash+endHash+endEntryMetaInfo
 
 
 '''
