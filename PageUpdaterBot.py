@@ -46,7 +46,7 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST'] # = getPageList()
+	pagesToMod = ['Marc Dessimoz', 'PUBTEST', 'PUBTEST2'] # = getPageList()
 	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
@@ -129,6 +129,8 @@ def main():
 									newEntries.append(newT2)
 									print('page mère ≠ page fille ?')
 								found=True
+							else:
+								newEntries.append(t2)
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
 							if isNewEntry and areEntrySimilar(entry, t2) :
@@ -137,8 +139,6 @@ def main():
 								found=True
 							else:
 								newEntries.append(t2)
-						print('original entry ' + originalEntryToAppend)
-						print('entries1 : ' + str(newEntries))
 
 					if not found:
 						if isNewEntry or emptyFillePage:
@@ -148,7 +148,6 @@ def main():
 						else:
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
-					print('entries2 : ' + str(newEntries))
 
 					sortedEntries = sorted(newEntries)
 
@@ -167,7 +166,8 @@ def main():
 		print("Successfully updated page : " + pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
-	updatePUBmetaInfo(PUBId)
+
+	updatePUBmetaInfo(int(PUBId))
 
 
 
@@ -294,7 +294,7 @@ def updatePUBmetaInfo(newId):
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
 	currentID = fetchPUBmetaInfo(False)
-	content=content.replace(metaInfo +titleID+ beginID + currentID + endID+endEntryMetaInfo, metaInfo +titleID+ beginID + str(newId) + endID+endEntryMetaInfo)
+	content=content.replace(metaInfo + beginID + currentID + endID+endEntryMetaInfo, metaInfo + beginID + str(newId) + endID+endEntryMetaInfo)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
