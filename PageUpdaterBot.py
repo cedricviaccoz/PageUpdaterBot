@@ -16,7 +16,7 @@ beginID = '&beginID&'
 endID = '&endID&'
 titleID='entryID = '
 
-titleHASH='entryHash ='
+titleHASH=' entryHash = '
 beginHash = '&beginHASH&'
 endHash = '&endHASH&'
 metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
@@ -64,8 +64,9 @@ def main():
 				#si l'entrée n'a pas d'ID, on lui met l'id suivant et un hash
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
-				PUBHASH = hashlib.new('ripemd160').update(entry).hexdigest() #=md5.new(entry).digest()
-				entry = setPUBInfos(entry, PUBId, PUBHASH)
+				humanEntry = entry.split(entryMetaInfo)[0]
+				PUBHASH = hashlib.md5(humanEntry.encode()).hexdigest()
+				entry = setPUBInfos(humanEntry, PUBId, PUBHASH)
 				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			entryToDelete = False
@@ -362,7 +363,7 @@ Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
 			  l'Id à mettre à jour sur cette page.
 '''
 def setPUBInfos(entry,PUBId,PUBhash):
-	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHASH+PUBhash+endHash
+	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHash+PUBhash+endHash
 
 
 '''
