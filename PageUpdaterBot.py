@@ -46,7 +46,7 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST', 'Marc Dessimoz'] # = getPageList()
+	pagesToMod = ['PUBTEST'] # = getPageList()
 	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
@@ -66,10 +66,10 @@ def main():
 				PUBId = str(PUBIdInt)
 				PUBHASH = generateHash(entry)
 				entry = setPUBInfos(entry, PUBId, PUBHASH)
-				originalEntryToAppend = entry
 				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			entryToDelete = False
+			originalEntryToAppend = entry
 
 			pagesConcerned=getHyperLinks(entry, pageTitle)
 
@@ -87,6 +87,8 @@ def main():
 					fillePageEntries = parseEntries(fillePageContenu)
 
 					previousFilleContent = unParseEntries(fillePageEntries)
+
+					emptyFillePage = (previousFilleContent == None)
 
 					#ensuite on créé un index des différentes entrées selon leur PUBId
 					IdAndEntry = []
@@ -107,42 +109,57 @@ def main():
 								if entryActualHash == getPUBHash(entry): #entry pas modifiée
 									t2ActualHash = generateHash(t2)
 									if t2ActualHash != getPUBHash(entry): #t2 modifiée
-										t2 = setPUBInfos(t2,t1,t2ActualHash)
 										originalEntryToAppend = t2 #modification dans la page mère
-										newEntries.append(originalEntryToAppend)
+										newT2 = setPUBInfos(t2,t1,t2ActualHash)
+										newEntries.append(newT2)
+										print('page mère = page fille ≠')
 									else:
+										#if entryActualHash == t2ActualHash:
 										#aucune modification mais quand meme append pour pas perdre l'entrée
 										newEntries.append(t2)
+										#originalEntryToAppend = newT2
+										print('page mère = page fille =')
+										
+
 								else:
-									#on overwrite l'entrée dans la page fille
-									t2 = setPUBInfos(entry,t1,entryActualHash)
-									#et on met à jour le hash dans la page mère
 									originalEntryToAppend = t2
-									newEntries.append(t2)
+									#on overwrite l'entrée dans la page fille
+									newT2 = setPUBInfos(entry,t1,entryActualHash)
+									#et on met à jour le hash dans la page mère
+									newEntries.append(newT2)
+									print('page mère ≠ page fille ?')
 								found=True
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
 							if isNewEntry and areEntrySimilar(entry, t2) :
-								t2 = entry
+								newT2 = entry
+								newEntries.append(newT2)
 								found=True
+							else:
 								newEntries.append(t2)
+						print('original entry ' + originalEntryToAppend)
+						print('entries1 : ' + str(newEntries))
 
 					if not found:
-						if isNewEntry:
+						if isNewEntry or emptyFillePage:
 							#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
-							IdAndEntry.append((currPUBId, entry))
+							print('entry : ' + str(entry))
+							newEntries.append(entry)
 						else:
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
+					print('entries2 : ' + str(newEntries))
 
 					sortedEntries = sorted(newEntries)
 
 					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 					contentToUp = unParseEntries(sortedEntries)
 					if contentToUp != None:
+						print('content up : ' + contentToUp)
 						uploadModifications(previousFilleContent, contentToUp, name)
 						print("Successfully updated page : " + name)
 			if not entryToDelete:
+				originalEntryToAppend = setPUBInfos(originalEntryToAppend,getPUBId(originalEntryToAppend),generateHash(originalEntryToAppend))
 				originalEntries.append(originalEntryToAppend)
 
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
@@ -388,7 +405,7 @@ Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
 '''
 def setPUBInfos(entry,PUBId,PUBhash):
 	entry = removeHash(entry)
-	return entry+' '+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHash+PUBhash+endHash+endEntryMetaInfo
+	return entry+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHash+PUBhash+endHash+endEntryMetaInfo
 
 
 '''
@@ -459,8 +476,8 @@ autrement Talse.
 '''
 def areEntrySimilar(entry1, entry2):
 	#la liste des hypermots inclus également la date
-	listOfHyperLinks1 = getHyperLinks(entry1)
-	listOfHyperLinks2 = getHyperLinks(entry2)
+	listOfHyperLinks1 = getHyperLinks(entry1, '')
+	listOfHyperLinks2 = getHyperLinks(entry2, '')
 	listOfReferences1 = getReferences(entry1)
 	listOfReferences2 = getReferences(entry2)
 	
