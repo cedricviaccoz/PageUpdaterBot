@@ -64,8 +64,7 @@ def main():
 				#si l'entrée n'a pas d'ID, on lui met l'id suivant et un hash
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
-				humanEntry = entry.split(entryMetaInfo)[0]
-				PUBHASH = hashlib.md5(humanEntry.encode()).hexdigest()
+				PUBHASH = generateHash(entry)
 				entry = setPUBInfos(humanEntry, PUBId, PUBHASH)
 				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
@@ -100,9 +99,21 @@ def main():
 						#On regarde d'abord si on a le même ID:
 						if t1 != None:
 							if t1 == currPUBId:
-								#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
-								#TODO hash et remplacer le bon
-								t2 = entry
+								entryActualHash = generateHash(entry)
+								if entryActualHash == getPUBHash(entry): #entry pas modifiée
+									t2ActualHash = generateHash(t2)
+									if t2ActualHash != getPUBHash(entry): #t2 modifiée
+										t2 = setPUBInfos(t2,t1,t2ActualHash)
+										originalEntries.append(t2) #modification dans la page mère
+										entryToDelete = True
+									else:
+										#aucune modification mais quand meme append pour pas perdre l'entrée ? TODO
+								else:
+									#on overwrite l'entrée dans la page fille
+									t2 = setPUBInfos(entry,t1,entryActualHash)
+									#et on met à jour le hash dans la page mère
+									originalEntries.append(t2) 
+									entryToDelete = True
 								found=True
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
@@ -118,9 +129,9 @@ def main():
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
 
-					newEntries = []
+					newEntries = [] #TODO au sommet
 					for t1, t2 in IdAndEntry:
-						newEntries.append(t2)
+						newEntries.append(t2) #TODO dans la boucle for 
 
 					sortedEntries = sorted(newEntries)
 
@@ -159,6 +170,8 @@ def getPUBId(content):
 		return PUB_ID.group(1)
 	else:
 		return None
+
+
 '''
 Récupère le PUB_hash
 dans le contenu passé en argument.
@@ -175,6 +188,19 @@ def getPUBHash(content):
 		return PUB_hash.group(1)
 	else:
 		return None
+
+
+'''
+Génère le hash d'une entrée en supprimant tout 
+d'abord les metainfos de l'entrée puis le retourne.
+
+@param entry : String
+			  l'entrée pour laquelle générer un hash.
+'''
+def generateHash(entry):
+	humanEntry = entry.split(entryMetaInfo)[0]
+	return hashlib.md5(humanEntry.encode()).hexdigest()
+
 
 '''
 Récupère tous les PUB_id
