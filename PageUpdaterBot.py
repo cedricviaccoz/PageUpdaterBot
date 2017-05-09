@@ -46,7 +46,7 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['Marc Dessimoz', 'PUBTEST', 'PUBTEST2'] # = getPageList()
+	pagesToMod = ['PUBTEST2'] # = getPageList()
 	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
@@ -122,8 +122,8 @@ def main():
 										
 
 								else:
-									originalEntryToAppend = t2
 									#on overwrite l'entrée dans la page fille
+									originalEntryToAppend = entry
 									newT2 = setPUBInfos(entry,t1,entryActualHash)
 									#et on met à jour le hash dans la page mère
 									newEntries.append(newT2)
