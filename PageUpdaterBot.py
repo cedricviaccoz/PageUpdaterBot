@@ -70,7 +70,6 @@ def main():
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			entryToDelete = False
 			originalEntryToAppend = entry
-
 			pagesConcerned=getHyperLinks(entry, pageTitle)
 
 			for name in pagesConcerned:
@@ -97,7 +96,6 @@ def main():
 
 					#liste qui contiendra les nouvelles entrées modifiées (ou pas) de la page fille. 
 					newEntries = []
-
 					found = False
 					currPUBId = getPUBId(entry)
 					#Le coeur de PUB on update les entrées selon l'entrée dont on dispose.
@@ -134,6 +132,7 @@ def main():
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
 							if isNewEntry and areEntrySimilar(entry, t2) :
+
 								newT2 = entry
 								newEntries.append(newT2)
 								found=True
@@ -148,6 +147,7 @@ def main():
 						else:
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
+
 
 					sortedEntries = sorted(newEntries)
 
@@ -527,8 +527,5 @@ def uploadModifications(previousContent, newContent, pageName):
 		content=content.replace(previousContent, newContent)
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
-
-
-
 
 main()
