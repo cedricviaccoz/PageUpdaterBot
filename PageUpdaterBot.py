@@ -3,6 +3,7 @@ import urllib
 import requests
 import json
 import re
+import hashlib
 from bs4 import BeautifulSoup
 
 passw = 'hqk-NGF-S6z-qqF'
@@ -12,9 +13,15 @@ summary = 'Wikipastbot update'
 user = 'PageUpdaterBot' #nom du bot
 HUBPage = baseurl + 'index.php/PageUpdaterBot' #Page contenant les méta information de PUB, notamment son compteur d'IDs.
 beginID = '&beginID&'
-endID = '&endID& -->'
+endID = '&endID&'
+titleID='entryID = '
+
+titleHASH=' entryHash = '
+beginHash = '&beginHASH&'
+endHash = '&endHASH&'
 metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur le HUB du bot
-entryMetaInfo = '<!-- PUB METAINFOS : entryID = ' #synthaxe des métainfos présentes sur les **entrées des pages**
+entryMetaInfo = '<!-- PUB METAINFOS : ' #synthaxe des métainfos présentes sur les **entrées des pages**
+endEntryMetaInfo=' -->' #synthaxe de fin des métainfos présentes sur les **entrées des pages**
 
 # Login request
 payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
@@ -39,7 +46,7 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST', 'Marc Dessimoz'] # = getPageList()
+	pagesToMod = ['PUBTEST2', 'Marc Dessimoz', 'PUBTEST', 'PUBTEST3'] # = getPageList()
 	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
@@ -54,13 +61,15 @@ def main():
 		for entry in allEntries:
 			isNewEntry = False
 			if getPUBId(entry) == None:
+				#si l'entrée n'a pas d'ID, on lui met l'id suivant et un hash
 				PUBIdInt = int(PUBId) + 1
 				PUBId = str(PUBIdInt)
-				entry = setPUBId(entry, PUBId)
+				PUBHASH = generateHash(entry)
+				entry = setPUBInfos(entry, PUBId, PUBHASH)
 				isNewEntry = True
 				#Important, à partir de ce moment la getPUBId(entry) devrait plus pouvoir retourner None !
 			entryToDelete = False
-
+			originalEntryToAppend = entry
 			pagesConcerned=getHyperLinks(entry, pageTitle)
 
 			for name in pagesConcerned:
@@ -78,56 +87,87 @@ def main():
 
 					previousFilleContent = unParseEntries(fillePageEntries)
 
+					emptyFillePage = (previousFilleContent == None)
+
 					#ensuite on créé un index des différentes entrées selon leur PUBId
 					IdAndEntry = []
 					for e in fillePageEntries:
 						IdAndEntry.append((getPUBId(e), e))
 
+					#liste qui contiendra les nouvelles entrées modifiées (ou pas) de la page fille. 
+					newEntries = []
 					found = False
 					currPUBId = getPUBId(entry)
-					#Le coeur de PUB on update les entrées selon l'entrée qu'on dispose nous.
+					#Le coeur de PUB on update les entrées selon l'entrée dont on dispose.
 					for t1, t2 in IdAndEntry:
 						#On regarde d'abord si on a le même ID:
 						if t1 != None:
 							if t1 == currPUBId:
-								#on a trouvé Un Id qui match, on overwrite l'entrée par celle de la page courante.
-								#TODO hash et remplacer le bon
-								t2 = entry
+								entryActualHash = generateHash(entry)
+								if entryActualHash == getPUBHash(entry): #entry pas modifiée
+									t2ActualHash = generateHash(t2)
+									if t2ActualHash != getPUBHash(entry): #t2 modifiée
+										originalEntryToAppend = t2 #modification dans la page mère
+										newT2 = setPUBInfos(t2,t1,t2ActualHash)
+										newEntries.append(newT2)
+										print('page mère = page fille ≠')
+									else:
+										#if entryActualHash == t2ActualHash:
+										#aucune modification mais quand meme append pour pas perdre l'entrée
+										newEntries.append(t2)
+										#originalEntryToAppend = newT2
+										print('page mère = page fille =')
+										
+
+								else:
+									#on overwrite l'entrée dans la page fille
+									originalEntryToAppend = entry
+									newT2 = setPUBInfos(entry,t1,entryActualHash)
+									#et on met à jour le hash dans la page mère
+									newEntries.append(newT2)
+									print('page mère ≠ page fille ?')
 								found=True
+							else:
+								newEntries.append(t2)
 						else:
 							#On un entrée indexée par "None", donc il faut regarder si les deux entrées sont similaires pour l'updater correctement.
 							if isNewEntry and areEntrySimilar(entry, t2) :
-								t2 = entry
+
+								newT2 = entry
+								newEntries.append(newT2)
 								found=True
+							else:
+								newEntries.append(t2)
 
 					if not found:
-						if isNewEntry:
+						if isNewEntry or emptyFillePage:
 							#Puisqu'aucune entrée matche, soit avec le PUBId soit avec leur similarité, on doit ajouter cette entrée comme une nouvelle entrée.
-							IdAndEntry.append((currPUBId, entry))
+							print('entry : ' + str(entry))
+							newEntries.append(entry)
 						else:
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
 
-					newEntries = []
-					for t1, t2 in IdAndEntry:
-						newEntries.append(t2)
 
 					sortedEntries = sorted(newEntries)
 
 					#A présent qu'on a updaté tout comme il fallait, on peut mettre en ligne les modifications sur la page.
 					contentToUp = unParseEntries(sortedEntries)
 					if contentToUp != None:
+						print('content up : ' + contentToUp)
 						uploadModifications(previousFilleContent, contentToUp, name)
 						print("Successfully updated page : " + name)
 			if not entryToDelete:
-				originalEntries.append(entry)
+				originalEntryToAppend = setPUBInfos(originalEntryToAppend,getPUBId(originalEntryToAppend),generateHash(originalEntryToAppend))
+				originalEntries.append(originalEntryToAppend)
 
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
 		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
 		print("Successfully updated page : " + pageTitle)
 
 	#le bot a finit ses modifications, il va à présent mettre à jour le PUBId de sa page avec le dernier PUBId attribué.
-	updatePUBmetaInfo(PUBId)
+
+	updatePUBmetaInfo(int(PUBId))
 
 
 
@@ -149,6 +189,45 @@ def getPUBId(content):
 		return PUB_ID.group(1)
 	else:
 		return None
+
+
+'''
+Récupère le PUB_hash
+dans le contenu passé en argument.
+S'il n'y en a pas, retourne None,
+sinon retourne le PUBId (en string).
+S'il y en a plusieurs, il retourne le dernier.
+
+@param content : String
+			  le contenu dans lequel trouver l'id.
+'''
+def getPUBHash(content):
+	PUB_hash = re.search(beginHash + '(.*)' + endHash, content)
+	if PUB_hash != None:
+		return PUB_hash.group(1)
+	else:
+		return None
+
+
+'''
+Génère le hash d'une entrée en supprimant tout 
+d'abord les metainfos de l'entrée puis le retourne.
+
+@param entry : String
+			  l'entrée pour laquelle générer un hash.
+'''
+def generateHash(entry):
+	return hashlib.md5(removeHash(entry).encode()).hexdigest()
+
+
+'''
+Enlève les métadonnées d'une entrée.
+
+@param entry : String
+			  l'entrée pour laquelle supprimer les métadonnées.
+'''
+def removeHash(entry):
+	return entry.split(entryMetaInfo)[0]
 
 
 '''
@@ -186,7 +265,7 @@ def fetchPUBmetaInfo(initialPass):
 	if initialPass:
 		currentID = '0'
 		#écrire metainfo dans le HUB
-		newMetaInfo = metaInfo + beginID + currentID + endID
+		newMetaInfo = metaInfo +titleID+ beginID + currentID + endID+endEntryMetaInfo
 		newContent = newMetaInfo + '\n'
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','prependtext':newContent,'summary':summary,'title':user,'token':edit_token}
 		r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
@@ -215,7 +294,7 @@ def updatePUBmetaInfo(newId):
 	for primitive in soup.findAll("text"):
 		content+=primitive.string
 	currentID = fetchPUBmetaInfo(False)
-	content=content.replace(metaInfo + beginID + currentID + endID, metaInfo + beginID + str(newId) + endID)
+	content=content.replace(metaInfo + beginID + currentID + endID+endEntryMetaInfo, metaInfo + beginID + str(newId) + endID+endEntryMetaInfo)
 	payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':user,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
@@ -313,18 +392,20 @@ def parseEntries(content):
 	return newLines
 
 
+
 '''
-Va mettre à jour le PUBId de l'entrée
-passée en argument si Un PUBId est présent,
-Sinon va ajouter ce PUBId à l'entrée
+Va mettre à jour les valeurs entre les balises (id et hash) de l'entrée
 
 @param entry : String
 			  l'entrée biographie.
+@param PUBhash : string 
+				hash à mettre à jour 
 @param PUBId : Int
 			  l'Id à mettre à jour sur cette page.
 '''
-def setPUBId(entry, PUBId):
-	return entry+' '+entryMetaInfo+beginID+PUBId+endID
+def setPUBInfos(entry,PUBId,PUBhash):
+	entry = removeHash(entry)
+	return entry+entryMetaInfo+titleID+beginID+PUBId+endID+titleHASH+beginHash+PUBhash+endHash+endEntryMetaInfo
 
 
 '''
@@ -395,8 +476,8 @@ autrement Talse.
 '''
 def areEntrySimilar(entry1, entry2):
 	#la liste des hypermots inclus également la date
-	listOfHyperLinks1 = getHyperLinks(entry1)
-	listOfHyperLinks2 = getHyperLinks(entry2)
+	listOfHyperLinks1 = getHyperLinks(entry1, '')
+	listOfHyperLinks2 = getHyperLinks(entry2, '')
 	listOfReferences1 = getReferences(entry1)
 	listOfReferences2 = getReferences(entry2)
 	
@@ -446,6 +527,5 @@ def uploadModifications(previousContent, newContent, pageName):
 		content=content.replace(previousContent, newContent)
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
-
 
 main()
