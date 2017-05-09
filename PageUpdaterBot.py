@@ -46,7 +46,7 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST2'] # = getPageList()
+	pagesToMod = ['PUBTEST2', 'Marc Dessimoz', 'PUBTEST', 'PUBTEST3'] # = getPageList()
 	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
