@@ -1,4 +1,4 @@
-# Résumé des fonctionnalité 
+# Résumé des fonctionnalités 
 [[PageUpdaterBot]] est un robot qui s'occupe de compléter les différentes pages sur Wikipast à partir d'hyperliens. [[PageUpdaterBot]] vérifie que sur chaque page, tous les hyperliens (excepté les dates) mènent vers une page existante et que les entrées correspondantes existent et soient placées aux bons endroits.  Si la page associée à l'hyperlien n'existe pas, [[PageUpdaterBot]] crée la page et place l'entrée associée dans cette page. 
 
 # Description technique 
