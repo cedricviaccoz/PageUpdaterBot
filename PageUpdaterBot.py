@@ -308,7 +308,6 @@ def updatePUBmetaInfo(newId):
 
 
 '''
-En fonction de la variable fromScratch,
 cette fonction va récupérer la liste des pages qui
 ont été modifiées récemment, ou bien
 toutes les pages sur lequel on veut établir
@@ -360,7 +359,7 @@ entrée biographie (c'est à dire une entrée à puce commencant par une date)
 				l'entrée à vérifier.
 '''
 def isValidEntry(entry):
-	if entry[0:3] == '*[[' and (entry[3:7]+entry[8:10]+entry[11:13]).isdigit() and entry[7]+entry[10] == '..' and entry[13:15] == ']]':
+	if (entry[0:3] == '*[[' and entry[3:7].isdigit()) or (entry[0:4] == '* [[' and entry[4:8].isdigit()):
 		return True
 	else:
 		return False
@@ -395,8 +394,13 @@ def parseEntries(content):
 			newLines.append(line)
 			foundOne = True
 		else:
-			if foundOne:
+			if line == '\n':
+				newLines.append(line)
+				foundOne = True
+			elif foundOne:
 				return newLines
+			else:
+				pass
 	return newLines
 
 
@@ -540,5 +544,9 @@ def uploadModifications(previousContent, newContent, pageName):
 if(sys.argv[1] == 'clean'):
 	cleaner()
 else:
-	pass
 	#main()
+	Allpages = getPageList()
+	print(len(Allpages))
+	for p in Allpages:
+		print(p)
+
