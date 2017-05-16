@@ -1,6 +1,7 @@
 # coding: utf-8
 import urllib
 import requests
+import sys
 import json
 import re
 import hashlib
@@ -40,13 +41,25 @@ edit_token = r3.json()['query']['tokens']['csrftoken']
 edit_cookie = r2.cookies.copy()
 edit_cookie.update(r3.cookies)
 
+# module to clean all comments left by PageUpdaterBot
+def cleaner():
+	pagesToMod = getPageList()
+	for p in pagesToMod:
+		contenu = fetchPageData(p)
+		list_to_delete = re.findall(r'<!--(.*?)-->', contenu)
+		newContent = contenu
+		for l in list_to_delete:
+			newContent = newContent.replace('<!--' + l + '-->', '')
+		uploadModifications(contenu, newContent, p)
+		print('Successfully cleaned current page : ' + p)
+
 
 def main():
 	# Récupération de l'Id de base pour les PUB_id
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = ['PUBTEST2', 'Marc Dessimoz', 'PUBTEST', 'PUBTEST3'] # = getPageList()
+	pagesToMod = getPageList()
 	listOfPagesToCompare = getPageList()
 
 	## boucle d'action principale du code.
@@ -523,4 +536,9 @@ def uploadModifications(previousContent, newContent, pageName):
 		payload={'action':'edit','assert':'user','format':'json','utf8':'','text':content,'summary':summary,'title':pageName,'token':edit_token}
 	r4=requests.post(baseurl+'api.php',data=payload,cookies=edit_cookie)
 
-main()
+
+if(sys.argv[1] == 'clean'):
+	cleaner()
+else:
+	pass
+	#main()
