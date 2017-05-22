@@ -314,19 +314,14 @@ toutes les pages sur lequel on veut établir
 un indexage par PUBId.
 Elle retournera la liste des pages sous
 la forme d'une liste d'url wikipast.
-
-@para fromScratch : Boolean
-				 vaut true si on veut faire un indexage depuis 0
-				 ou false si on veut juste récupérer les pages
-				 récemment modifiées.
 '''
 def getPageList():
-	protected_logins=["Frederickaplan","Maud","Vbuntinx","Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
+	#protected_logins=["Frederickaplan","Maud","Vbuntinx","TangoBot", "Testbot","IB","SourceBot","PageUpdaterBot","Orthobot","BioPathBot","ChronoBOT","Amonbaro","AntoineL","AntoniasBanderos","Arnau","Arnaudpannatier","Aureliver","Brunowicht","Burgerpop","Cedricviaccoz","Christophe","Claudioloureiro","Ghislain","Gregoire3245","Hirtg","Houssm","Icebaker","JenniCin","JiggyQ","JulienB","Kl","Kperrard","Leandro Kieliger","Marcus","Martin","MatteoGiorla","Mireille","Mj2905","Musluoglucem","Nacho","Nameless","Nawel","O'showa","PA","Qantik","QuentinB","Raphael.barman","Roblan11","Romain Fournier","Sbaaa","Snus","Sonia","Tboyer","Thierry","Titi","Vlaedr","Wanda"]
 	depuis_date = '2017-02-02T16:00:00Z'
-
+	protected_logins = ['PageUpdaterBot']
 	liste_pages=[]
 	for user in protected_logins:
-		result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date)
+		result=requests.post(baseurl+'api.php?action=query&list=usercontribs&ucuser='+user+'&format=xml&ucend='+depuis_date+'&uclimit=500')
 		soup=BeautifulSoup(result.content,'lxml')
 		for primitive in soup.usercontribs.findAll('item'):
 			liste_pages.append(primitive['title'])
@@ -547,6 +542,5 @@ else:
 	#main()
 	Allpages = getPageList()
 	print(len(Allpages))
-	for p in Allpages:
-		print(p)
-
+	#for p in Allpages:
+		#print(p)
