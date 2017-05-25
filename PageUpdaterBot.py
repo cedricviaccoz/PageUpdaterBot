@@ -43,7 +43,9 @@ edit_cookie.update(r3.cookies)
 
 # module to clean all comments left by PageUpdaterBot
 def cleaner():
-	pagesToMod = getPageList()
+	# for some reasons (limitations in the wikipast API ?) some pages could not be retrieved by "getPageList", so they are hardcoded here.
+	specialNeedPages = ['Jeux olympiques', 'Évocation', ' Autorisation', 'Montreux', 'Sommet de la francophonie', '1907', 'Archéologue', 'Président de l\' Association de Plainpalais', 'Conseiller', 'Directeur', '1828', 'C. Everet Koop', 'Château de La Sarraz', 'Premier Lord de l\'Amirauté', 'New Jersey', 'Orange', 'Laboratoire', 'Clementine Hozier', 'CIO', 'Inglewood', 'New-York', 'Gabriela Sabatini', 'Sports Illustrated', 'Kareem Abdul-Jabbar', 'Écosse', 'Vainqueur', 'Okamoto', 'Guide du comportement sexuel responsable', 'Palexpo', 'Fascistes', 'Newark', 'Barcelone', 'Random House', '1955', 'Australie', 'Chalon-Sur-Saône', 'Atlanta', 'Michael Jordan', 'Chicago Bulls', 'Président de l\' Association de Carouge', 'Chef suisse', 'Grand chef suisse', 'Auteur', 'Vice-président', 'Ancien archéologue', 'Archéologue genevois', '1987', 'Halle des fêtes de Lausanne', 'Confédération', 'Société des nations', 'Neutralité', 'Braunau-sur-Inn']
+	pagesToMod = getPageList() + specialNeedPages
 	for p in pagesToMod:
 		contenu = fetchPageData(p)
 		list_to_delete = re.findall(r'<!--(.*?)-->', contenu)
@@ -390,8 +392,7 @@ def parseEntries(content):
 			foundOne = True
 		else:
 			if line == '\n':
-				newLines.append(line)
-				foundOne = True
+				pass
 			elif foundOne:
 				return newLines
 			else:
