@@ -24,6 +24,8 @@ metaInfo = '<!-- PUB METAINFOS : ID = ' #synthaxe des métainfos présentes sur 
 entryMetaInfo = '<!-- PUB METAINFOS : ' #synthaxe des métainfos présentes sur les **entrées des pages**
 endEntryMetaInfo=' -->' #synthaxe de fin des métainfos présentes sur les **entrées des pages**
 
+specialNeedPages = ['Jeux olympiques', 'Évocation', ' Autorisation', 'Montreux', 'Sommet de la francophonie', '1907', 'Archéologue', 'Président de l\' Association de Plainpalais', 'Conseiller', 'Directeur', '1828', 'C. Everet Koop', 'Château de La Sarraz', 'Premier Lord de l\'Amirauté', 'New Jersey', 'Orange', 'Laboratoire', 'Clementine Hozier', 'CIO', 'Inglewood', 'New-York', 'Gabriela Sabatini', 'Sports Illustrated', 'Kareem Abdul-Jabbar', 'Écosse', 'Vainqueur', 'Okamoto', 'Guide du comportement sexuel responsable', 'Palexpo', 'Fascistes', 'Newark', 'Barcelone', 'Random House', '1955', 'Australie', 'Chalon-Sur-Saône', 'Atlanta', 'Michael Jordan', 'Chicago Bulls', 'Président de l\' Association de Carouge', 'Chef suisse', 'Grand chef suisse', 'Auteur', 'Vice-président', 'Ancien archéologue', 'Archéologue genevois', '1987', 'Halle des fêtes de Lausanne', 'Confédération', 'Société des nations', 'Neutralité', 'Braunau-sur-Inn']
+
 # Login request
 payload = {'action':'query','format':'json','utf8':'','meta':'tokens','type':'login'}
 r1 = requests.post(baseurl + 'api.php', data = payload)
@@ -44,7 +46,6 @@ edit_cookie.update(r3.cookies)
 # module to clean all comments left by PageUpdaterBot
 def cleaner():
 	# for some reasons (limitations in the wikipast API ?) some pages could not be retrieved by "getPageList", so they are hardcoded here.
-	specialNeedPages = ['Jeux olympiques', 'Évocation', ' Autorisation', 'Montreux', 'Sommet de la francophonie', '1907', 'Archéologue', 'Président de l\' Association de Plainpalais', 'Conseiller', 'Directeur', '1828', 'C. Everet Koop', 'Château de La Sarraz', 'Premier Lord de l\'Amirauté', 'New Jersey', 'Orange', 'Laboratoire', 'Clementine Hozier', 'CIO', 'Inglewood', 'New-York', 'Gabriela Sabatini', 'Sports Illustrated', 'Kareem Abdul-Jabbar', 'Écosse', 'Vainqueur', 'Okamoto', 'Guide du comportement sexuel responsable', 'Palexpo', 'Fascistes', 'Newark', 'Barcelone', 'Random House', '1955', 'Australie', 'Chalon-Sur-Saône', 'Atlanta', 'Michael Jordan', 'Chicago Bulls', 'Président de l\' Association de Carouge', 'Chef suisse', 'Grand chef suisse', 'Auteur', 'Vice-président', 'Ancien archéologue', 'Archéologue genevois', '1987', 'Halle des fêtes de Lausanne', 'Confédération', 'Société des nations', 'Neutralité', 'Braunau-sur-Inn']
 	pagesToMod = getPageList() + specialNeedPages
 	for p in pagesToMod:
 		contenu = fetchPageData(p)
@@ -61,15 +62,23 @@ def main():
 	PUBId = fetchPUBmetaInfo(False)
 
 	# Récupération de la liste de pages à parcourir.
-	pagesToMod = getPageList()
-	listOfPagesToCompare = getPageList()
+	pagesToMod = getPageList() + specialNeedPages
+	listOfPagesToCompare = getPageList() + specialNeedPages
+
+	numberOfPages = len(pagesToMod)
+	counter = 0
 
 	## boucle d'action principale du code.
 	for u in pagesToMod:
+		counter += 1
+		print('Page ' + str(counter) + ' of ' + str(numberOfPages))
+		
 		contenu = fetchPageData(u)
 		pageTitle = u
 		allEntries = parseEntries(contenu)
 		previousContent = unParseEntries(allEntries)
+		if '' in allEntries:
+			allEntries.remove('')
 
 		originalEntries=[]
 
@@ -101,6 +110,8 @@ def main():
 					fillePageEntries = parseEntries(fillePageContenu)
 
 					previousFilleContent = unParseEntries(fillePageEntries)
+					if '' in fillePageEntries:
+						fillePageEntries.remove('')
 
 					emptyFillePage = (previousFilleContent == None)
 
@@ -159,6 +170,7 @@ def main():
 							#Supprimer l'entrée de la page mère
 							entryToDelete = True
 
+					newEntries = [e.replace('* [[', '*[[') for e in newEntries]
 
 					sortedEntries = sorted(newEntries)
 
@@ -172,6 +184,8 @@ def main():
 				originalEntries.append(originalEntryToAppend)
 
 		#On doit mettre à jour potentiellement la page originelle si on a du ajouter un PUB_Id
+		originalEntries = [e.replace('* [[', '*[[') for e in originalEntries]
+
 		uploadModifications(previousContent, unParseEntries(sorted(originalEntries)), pageTitle)
 		print("Successfully updated current page : " + pageTitle)
 
@@ -391,12 +405,11 @@ def parseEntries(content):
 			newLines.append(line)
 			foundOne = True
 		else:
-			if line == '\n':
-				pass
-			elif foundOne:
-				return newLines
+			if line == '' or line == '\n':
+				newLines.append(line)
 			else:
-				pass
+				if foundOne:
+					return newLines
 	return newLines
 
 
@@ -540,8 +553,4 @@ def uploadModifications(previousContent, newContent, pageName):
 if(sys.argv[1] == 'clean'):
 	cleaner()
 else:
-	#main()
-	Allpages = getPageList()
-	print(len(Allpages))
-	#for p in Allpages:
-		#print(p)
+	main()
